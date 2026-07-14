@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+/* Handdrawn / Neobrutalist styles */
+.b-heavy {
+  border-width: 3px;
+  border-style: solid;
+}
+
+.shadow-heavy {
+  box-shadow: 4px 4px 0px 0px rgba(15, 23, 42, 1);
+}
+
+.shadow-heavy-dark {
+  box-shadow: 4px 4px 0px 0px rgba(255, 255, 255, 0.15);
+}
+
+.shadow-pop-blue {
+  box-shadow: 0px 6px 0px 0px rgba(29, 78, 216, 1);
+}
+
+.shadow-pop-amber {
+  box-shadow: 0px 6px 0px 0px rgba(180, 83, 9, 1);
+}
+
+.active-pop:active {
+  transform: translateY(4px);
+  box-shadow: none;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}

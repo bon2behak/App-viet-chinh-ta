@@ -1,0 +1,6 @@
+{
+  "name": "Dictation Hero",
+  "description": "An interactive English dictation game with local progress, dynamic TTS voice options, adaptive speeds, custom lesson creation, error highlighting, and AI-powered explanations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

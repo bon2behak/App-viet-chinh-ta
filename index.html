@@ -1,0 +1,1918 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dictation Hero - Chép Chính Tả Tiếng Anh</title>
+    <!-- Tailwind CSS (Play CDN for rapid compile) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              mono: ['JetBrains Mono', 'monospace'],
+            },
+          },
+        },
+      };
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+    <style>
+      /* Neo-brutalist / Professional Polish Styles */
+      .b-heavy {
+        border-width: 3px;
+        border-style: solid;
+        border-color: #0f172a;
+      }
+      .dark .b-heavy {
+        border-color: #f1f5f9;
+      }
+      .shadow-heavy {
+        box-shadow: 4px 4px 0px 0px #0f172a;
+      }
+      .dark .shadow-heavy {
+        box-shadow: 4px 4px 0px 0px rgba(241, 245, 249, 0.15);
+      }
+      .shadow-pop-blue {
+        box-shadow: 0px 6px 0px 0px #1d4ed8;
+      }
+      .shadow-pop-emerald {
+        box-shadow: 0px 6px 0px 0px #047857;
+      }
+      .active-pop:active {
+        transform: translateY(4px);
+        box-shadow: none;
+      }
+      /* Speech visualizer animation */
+      @keyframes ripple {
+        0%, 100% { transform: scale(1); opacity: 0.5; }
+        50% { transform: scale(1.4); opacity: 0.1; }
+      }
+      .animate-ripple {
+        animation: ripple 1.5s infinite ease-in-out;
+      }
+    </style>
+  </head>
+  <body class="bg-[#F0F7FF] text-slate-800 dark:bg-[#0B1329] dark:text-slate-100 min-h-screen transition-colors duration-300 font-sans selection:bg-blue-200">
+    
+    <div id="root"></div>
+
+    <script>
+      // ==========================================
+      // SVG ICONS MAP (Highly Reliable & Self-Contained)
+      // ==========================================
+      const ICONS = {
+        award: '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7" /><path stroke-linecap="round" stroke-linejoin="round" d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12" /></svg>',
+        sparkles: '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>',
+        arrowLeft: '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>',
+        plus: '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>',
+        history: '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
+        settings: '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>',
+        bookOpen: '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>',
+        volume2: '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M12 18.75V5.25L7.75 9H4.5v6h3.25L12 18.75z" /></svg>',
+        volume1: '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072M12 18.75V5.25L7.75 9H4.5v6h3.25L12 18.75z" /></svg>',
+        play: '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /></svg>',
+        checkCircle: '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
+        alertCircle: '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
+        refresh: '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 4H18" /></svg>',
+        eye: '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>',
+        eyeOff: '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" /></svg>',
+        trash: '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>',
+        chevronRight: '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>',
+        trophy: '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5a2 2 0 10-2 2h2zm0 0H4.558a1.5 1.5 0 00-1.472 1.22l-.76 4.11a1.5 1.5 0 001.472 1.78h4.522M12 8h7.442a1.5 1.5 0 011.47 1.22l.76 4.11a1.5 1.5 0 01-1.47 1.78h-4.522" /></svg>',
+        star: '<svg class="w-5 h-5 text-amber-500 fill-amber-500" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.907c.961 0 1.36 1.246.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.572-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>',
+        flame: '<svg class="w-5 h-5 text-orange-500 fill-orange-500" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>',
+        sun: '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707.707M12 7a5 5 0 100 10 5 5 0 000-10z" /></svg>',
+        moon: '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>',
+        key: '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m-5 7a5 5 0 11-5-5 5 5 0 015 5zm5-5H12m0 0l-2-2m2 2l-2 2" /></svg>',
+        school: '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /></svg>',
+        info: '<svg class="w-4 h-4 text-sky-500 fill-sky-500/10" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
+        soundOn: '<svg class="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M12 18.75V5.25L7.75 9H4.5v6h3.25L12 18.75z" /></svg>'
+      };
+
+      function getIcon(name) {
+        return ICONS[name] || '<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>';
+      }
+
+      // ==========================================
+      // DEFAULT SEED DATA
+      // ==========================================
+      const DEFAULT_LESSONS = [
+        {
+          id: "lvl-1-1",
+          level: "easy",
+          title: "Lời Chào Buổi Sáng",
+          description: "Mẫu câu giao tiếp cơ bản khi thức dậy.",
+          sentences: [
+            "Good morning, everyone.",
+            "How did you sleep last night?",
+            "It is a beautiful sunny day.",
+            "Please turn on the light.",
+            "Let's have breakfast together."
+          ]
+        },
+        {
+          id: "lvl-1-2",
+          level: "easy",
+          title: "Sở Thích Cá Nhân",
+          description: "Nói về những việc bạn yêu thích.",
+          sentences: [
+            "I like reading books.",
+            "She plays piano very well.",
+            "They enjoy swimming in summer.",
+            "My father loves cooking dinner.",
+            "We go for a walk every evening."
+          ]
+        },
+        {
+          id: "lvl-2-1",
+          level: "medium",
+          title: "Kế Hoạch Cuối Tuần",
+          description: "Các mẫu câu lập kế hoạch đi chơi.",
+          sentences: [
+            "What are your plans for this weekend?",
+            "We are going to visit the new museum.",
+            "I need to buy some ingredients for the party.",
+            "Let us meet at the coffee shop at nine AM.",
+            "Don't forget to bring an umbrella."
+          ]
+        },
+        {
+          id: "lvl-3-1",
+          level: "hard",
+          title: "Thời Tiết Và Biến Đổi Khí Hậu",
+          description: "Bài đọc chính tả học thuật nâng cao.",
+          sentences: [
+            "Global temperatures are rising at an unprecedented rate.",
+            "Many species face extinction due to severe habitat loss.",
+            "Renewable energy sources must replace fossil fuels immediately.",
+            "The government implemented strict policies to reduce plastic waste.",
+            "Environmental conservation requires global cooperation and dedication."
+          ]
+        }
+      ];
+
+      const DEFAULT_BADGES = [
+        { id: "badge-rookie", name: "Tân Binh", desc: "Hoàn thành bài chính tả đầu tiên", icon: "school", targetType: "sessions", target: 1 },
+        { id: "badge-warrior", name: "Chiến Thần", desc: "Đạt 10 bài luyện tập hoàn tất", icon: "trophy", targetType: "sessions", target: 10 },
+        { id: "badge-veteran", name: "Kinh Nghiệm", desc: "Tích lũy đạt 500 XP chính tả", icon: "award", targetType: "xp", target: 500 },
+        { id: "badge-streak-5", name: "Kỷ Lục Gia", desc: "Giữ chuỗi liên tục 5 ngày", icon: "flame", targetType: "streak", target: 5 }
+      ];
+
+      // ==========================================
+      // STATE MANAGEMENT (Single Source Of Truth)
+      // ==========================================
+      let STATE = {
+        screen: "welcome", // welcome, dashboard, practice, result, history, achievements, creator, settings
+        stats: {
+          username: "",
+          xp: 0,
+          level: 1,
+          coins: 50,
+          streak: 0,
+          lastActiveDate: ""
+        },
+        settings: {
+          voiceURI: "",
+          speechRate: 1.0,
+          alwaysShowTranslation: false,
+          fontSize: "medium", // small, medium, large
+          theme: "light",
+          customApiKey: ""
+        },
+        customLessons: [],
+        currentLesson: null,
+        currentSentenceIndex: 0,
+        typedText: "",
+        listenCount: 0,
+        currentSentenceSubmitted: false,
+        currentSentenceIsCorrect: false,
+        currentWordDiffs: [],
+        currentAiExplanation: "",
+        currentShowAnswer: false,
+        currentAttemptsUsed: 1,
+        practiceStats: {
+          sentencesResults: [], // { sentence, typed, diffs, accuracy, xpEarned, coinsEarned, wasPerfect, explanation }
+          startTime: 0
+        },
+        history: [], // { date, lessonTitle, accuracy, xp, coins }
+        vocabulary: [], // { word, context, timestamp }
+        isLoading: false,
+        errorMsg: "",
+        translationCache: {}, // sentence -> vi text
+        aiExplanation: ""
+      };
+
+      // ==========================================
+      // LOCALSTORAGE PERSISTENCE
+      // ==========================================
+      function loadState() {
+        const savedStats = localStorage.getItem("dh_stats");
+        if (savedStats) STATE.stats = JSON.parse(savedStats);
+
+        const savedSettings = localStorage.getItem("dh_settings");
+        if (savedSettings) STATE.settings = JSON.parse(savedSettings);
+
+        const savedCustom = localStorage.getItem("dh_custom");
+        if (savedCustom) STATE.customLessons = JSON.parse(savedCustom);
+
+        const savedHistory = localStorage.getItem("dh_history");
+        if (savedHistory) STATE.history = JSON.parse(savedHistory);
+
+        const savedVocab = localStorage.getItem("dh_vocab");
+        if (savedVocab) STATE.vocabulary = JSON.parse(savedVocab);
+
+        const savedCache = localStorage.getItem("dh_cache");
+        if (savedCache) STATE.translationCache = JSON.parse(savedCache);
+        
+        // Dark mode setup
+        applyTheme();
+      }
+
+      function saveState() {
+        localStorage.setItem("dh_stats", JSON.stringify(STATE.stats));
+        localStorage.setItem("dh_settings", JSON.stringify(STATE.settings));
+        localStorage.setItem("dh_custom", JSON.stringify(STATE.customLessons));
+        localStorage.setItem("dh_history", JSON.stringify(STATE.history));
+        localStorage.setItem("dh_vocab", JSON.stringify(STATE.vocabulary));
+        localStorage.setItem("dh_cache", JSON.stringify(STATE.translationCache));
+      }
+
+      function applyTheme() {
+        if (STATE.settings.theme === "dark") {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+      }
+
+      // ==========================================
+      // TEXT COMPARISON / ALIGNMENT ALGORITHM (DP)
+      // ==========================================
+      function sanitizeForCompare(word) {
+        if (!word) return "";
+        return word
+          .toLowerCase()
+          .replace(/^['"“‘(]+|['"”’).,;:!?]+$/g, "")
+          .trim();
+      }
+
+      function alignAndDiff(originalSentence, typedSentence) {
+        const originalWords = originalSentence.trim().split(/\s+/).filter(Boolean);
+        const typedWords = typedSentence.trim().split(/\s+/).filter(Boolean);
+        const n = originalWords.length;
+        const m = typedWords.length;
+
+        const dp = Array(n + 1).fill(null).map(() => Array(m + 1).fill(0));
+
+        for (let i = 0; i <= n; i++) dp[i][0] = i * 1.5;
+        for (let j = 0; j <= m; j++) dp[0][j] = j * 1.5;
+
+        for (let i = 1; i <= n; i++) {
+          const origSan = sanitizeForCompare(originalWords[i - 1]);
+          for (let j = 1; j <= m; j++) {
+            const typedSan = sanitizeForCompare(typedWords[j - 1]);
+            if (origSan === typedSan) {
+              dp[i][j] = dp[i - 1][j - 1];
+            } else {
+              const subCost = dp[i - 1][j - 1] + 2.0;
+              const delCost = dp[i - 1][j] + 1.5;
+              const insCost = dp[i][j - 1] + 1.5;
+              dp[i][j] = Math.min(subCost, delCost, insCost);
+            }
+          }
+        }
+
+        const diffs = [];
+        let i = n, j = m;
+
+        while (i > 0 || j > 0) {
+          if (i > 0 && j > 0) {
+            const origWord = originalWords[i - 1];
+            const typedWord = typedWords[j - 1];
+            const origSan = sanitizeForCompare(origWord);
+            const typedSan = sanitizeForCompare(typedWord);
+
+            if (origSan === typedSan) {
+              diffs.unshift({ word: typedWord, type: "correct" });
+              i--; j--;
+            } else {
+              const subCost = dp[i - 1][j - 1];
+              const delCost = dp[i - 1][j];
+              const insCost = dp[i][j - 1];
+              const minCost = Math.min(subCost + 2.0, delCost + 1.5, insCost + 1.5);
+
+              if (minCost === subCost + 2.0) {
+                diffs.unshift({ word: typedWord, type: "incorrect", correction: origWord });
+                i--; j--;
+              } else if (minCost === delCost + 1.5) {
+                diffs.unshift({ word: origWord, type: "missing" });
+                i--;
+              } else {
+                diffs.unshift({ word: typedWord, type: "extra" });
+                j--;
+              }
+            }
+          } else if (i > 0) {
+            diffs.unshift({ word: originalWords[i - 1], type: "missing" });
+            i--;
+          } else {
+            diffs.unshift({ word: typedWords[j - 1], type: "extra" });
+            j--;
+          }
+        }
+        return diffs;
+      }
+
+      function calculateAccuracy(diffs) {
+        if (!diffs || diffs.length === 0) return 0;
+        const total = diffs.length;
+        const correct = diffs.filter(d => d.type === "correct").length;
+        return Math.round((correct / total) * 100);
+      }
+
+      // ==========================================
+      // TEXT TO SPEECH (WEB SPEECH SYNTHESIS)
+      // ==========================================
+      let synth = window.speechSynthesis;
+      let speechUtterance = null;
+
+      function getVoicesList() {
+        if (!synth) return [];
+        return synth.getVoices().filter(v => v.lang.startsWith("en"));
+      }
+
+      function speakSentence(text, slow = false) {
+        if (!synth) return;
+        synth.cancel();
+
+        speechUtterance = new SpeechSynthesisUtterance(text);
+        
+        // Voice selection
+        const voices = getVoicesList();
+        const selectedVoice = voices.find(v => v.voiceURI === STATE.settings.voiceURI) || voices[0];
+        if (selectedVoice) speechUtterance.voice = selectedVoice;
+
+        // Speed settings
+        let rate = STATE.settings.speechRate || 1.0;
+        if (slow) rate *= 0.7; // 0.7x slow rate playback
+        speechUtterance.rate = Math.max(0.4, Math.min(2.0, rate));
+
+        synth.speak(speechUtterance);
+      }
+
+      // ==========================================
+      // STREAK TRACKER
+      // ==========================================
+      function updateActiveStreak() {
+        const todayStr = new Date().toDateString();
+        const lastActive = STATE.stats.lastActiveDate;
+
+        if (lastActive === todayStr) {
+          return; // Already logged today
+        }
+
+        if (!lastActive) {
+          STATE.stats.streak = 1;
+        } else {
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          const yesterdayStr = yesterday.toDateString();
+
+          if (lastActive === yesterdayStr) {
+            STATE.stats.streak += 1;
+          } else {
+            STATE.stats.streak = 1; // Streak broken, reset
+          }
+        }
+        STATE.stats.lastActiveDate = todayStr;
+        saveState();
+      }
+
+      // ==========================================
+      // DUAL-MODE GEMINI API HANDLERS
+      // ==========================================
+      async function callGemini(endpoint, payload) {
+        // Mode 1: Custom Client API Key
+        if (STATE.settings.customApiKey) {
+          const apiKey = STATE.settings.customApiKey;
+          let prompt = "";
+          let mimeType = undefined;
+
+          if (endpoint === "split") {
+            prompt = `Split the following English paragraph or text into a JSON list of individual sentences. Return ONLY a JSON object with a single key "sentences" which is an array of strings. Do not include markdown block syntax.
+Text to split:
+"${payload.text}"`;
+            mimeType = "application/json";
+          } else if (endpoint === "translate") {
+            prompt = `Translate the following English sentence into clear, natural Vietnamese suitable for English learners (elementary to high school level). Output ONLY the translation, absolutely no extra comments, explanations or markdown.
+Sentence: "${payload.sentence}"`;
+          } else if (endpoint === "explain") {
+            prompt = `You are an encouraging and patient English teacher in Vietnam.
+Analyze the user's spelling/grammar mistakes in this dictation exercise.
+Original English sentence: "${payload.original}"
+User typed sentence: "${payload.typed}"
+
+Provide a short, easy-to-understand explanation in Vietnamese (1 to 3 short sentences/bullet points) targeted at elementary or middle school students.
+Explain clearly what they wrote wrong and why it should be corrected. Keep it friendly, clear, and highly encouraging! Do not use markdown headers.`;
+          }
+
+          try {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+            const reqBody = {
+              contents: [{ parts: [{ text: prompt }] }]
+            };
+            if (mimeType) {
+              reqBody.generationConfig = { responseMimeType: mimeType };
+            }
+
+            const response = await fetch(url, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(reqBody)
+            });
+
+            if (!response.ok) {
+              const errData = await response.json();
+              throw new Error(errData.error?.message || "Direct API call failed.");
+            }
+
+            const resJson = await response.json();
+            const rawText = resJson.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            
+            if (endpoint === "split") {
+              const clean = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
+              return JSON.parse(clean);
+            }
+            return { text: rawText.trim() };
+          } catch (err) {
+            console.error("Direct Gemini call failed:", err);
+            throw err;
+          }
+        }
+
+        // Mode 2: Call workspace proxy (Backend Server)
+        try {
+          const route = endpoint === "split" ? "/api/split-lesson" :
+                        endpoint === "translate" ? "/api/translate-sentence" : "/api/explain-mistake";
+          
+          const response = await fetch(route, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          if (!response.ok) {
+            throw new Error("Server proxy request failed");
+          }
+
+          const resData = await response.json();
+          if (endpoint === "split") {
+            return { sentences: resData.sentences };
+          } else if (endpoint === "translate") {
+            return { text: resData.translation };
+          } else {
+            return { text: resData.explanation };
+          }
+        } catch (serverErr) {
+          console.error("Server proxy failed:", serverErr);
+          throw serverErr;
+        }
+      }
+
+      // Offline Regex Fallbacks
+      function regexSplitSentences(text) {
+        return text
+          .replace(/([.!?])\s*(?=[A-Z“"'])/g, "$1|")
+          .split("|")
+          .map(s => s.trim())
+          .filter(Boolean);
+      }
+
+      function localOfflineTranslation(sentence) {
+        // Fallback placeholder
+        return "(Bản dịch sẽ tự động tải khi kết nối với máy chủ hoặc thiết lập API Key)";
+      }
+
+      // ==========================================
+      // ROUTING / SCREEN SWITCHING
+      // ==========================================
+      function navigate(screen, params = null) {
+        STATE.screen = screen;
+        STATE.errorMsg = "";
+        STATE.isLoading = false;
+
+        if (screen === "practice" && params) {
+          STATE.currentLesson = params.lesson;
+          STATE.currentSentenceIndex = 0;
+          STATE.typedText = "";
+          STATE.listenCount = 0;
+          
+          STATE.currentSentenceSubmitted = false;
+          STATE.currentSentenceIsCorrect = false;
+          STATE.currentWordDiffs = [];
+          STATE.currentAiExplanation = "";
+          STATE.currentShowAnswer = false;
+          STATE.currentAttemptsUsed = 1;
+
+          STATE.practiceStats = {
+            sentencesResults: [],
+            startTime: Date.now()
+          };
+          
+          // Play first sentence automatically
+          setTimeout(() => {
+            speakSentence(STATE.currentLesson.sentences[0]);
+            STATE.listenCount = 1;
+            render();
+          }, 400);
+        }
+
+        saveState();
+        render();
+      }
+
+      // ==========================================
+      // ACTION HANDLERS
+      // ==========================================
+      function handleWelcomeSubmit(e) {
+        e.preventDefault();
+        const input = document.getElementById("username-input");
+        const name = input ? input.value.trim() : "";
+        if (!name) return;
+
+        STATE.stats.username = name;
+        updateActiveStreak();
+        saveState();
+        navigate("dashboard");
+      }
+
+      function handleSaveCustomLesson(e) {
+        e.preventDefault();
+        const titleInput = document.getElementById("creator-title");
+        const descInput = document.getElementById("creator-desc");
+        const textInput = document.getElementById("creator-text");
+
+        const title = titleInput ? titleInput.value.trim() : "";
+        const desc = descInput ? descInput.value.trim() : "";
+        const text = textInput ? textInput.value.trim() : "";
+
+        if (!title || !text) {
+          STATE.errorMsg = "Vui lòng nhập đầy đủ tiêu đề và văn bản bài đọc.";
+          render();
+          return;
+        }
+
+        STATE.isLoading = true;
+        render();
+
+        // Split text into sentences using AI or regex fallback
+        callGemini("split", { text })
+          .then(data => {
+            const list = data.sentences || regexSplitSentences(text);
+            if (!list || list.length === 0) throw new Error("Không thể trích xuất câu văn.");
+            
+            const newLesson = {
+              id: "custom-" + Date.now(),
+              level: "custom",
+              title,
+              description: desc || "Bài học tùy chỉnh tự biên soạn.",
+              sentences: list
+            };
+
+            STATE.customLessons.unshift(newLesson);
+            saveState();
+            navigate("dashboard");
+          })
+          .catch(err => {
+            console.warn("Dùng tách câu regex ngoại tuyến:", err);
+            const list = regexSplitSentences(text);
+            const newLesson = {
+              id: "custom-" + Date.now(),
+              level: "custom",
+              title,
+              description: desc || "Bài học tùy chỉnh tự biên soạn.",
+              sentences: list
+            };
+            STATE.customLessons.unshift(newLesson);
+            saveState();
+            navigate("dashboard");
+          });
+      }
+
+      function handleSpeak(slow = false) {
+        if (!STATE.currentLesson) return;
+        const sentence = STATE.currentLesson.sentences[STATE.currentSentenceIndex];
+        speakSentence(sentence, slow);
+        STATE.listenCount++;
+        render();
+      }
+
+      function handleShowTranslation() {
+        const sentence = STATE.currentLesson.sentences[STATE.currentSentenceIndex];
+        if (STATE.translationCache[sentence]) {
+          render();
+          return;
+        }
+
+        STATE.isLoading = true;
+        render();
+
+        callGemini("translate", { sentence })
+          .then(res => {
+            STATE.translationCache[sentence] = res.text;
+            saveState();
+            STATE.isLoading = false;
+            render();
+          })
+          .catch(err => {
+            STATE.translationCache[sentence] = localOfflineTranslation(sentence);
+            STATE.isLoading = false;
+            render();
+          });
+      }
+
+      function handleSaveWordToVocabulary(word, context) {
+        const clean = sanitizeForCompare(word);
+        if (!clean) return;
+
+        const exists = STATE.vocabulary.some(v => sanitizeForCompare(v.word) === clean);
+        if (!exists) {
+          STATE.vocabulary.unshift({
+            word: word.replace(/[.,;:!?]+/g, ""),
+            context,
+            timestamp: Date.now()
+          });
+          saveState();
+          // Flash toast or notice
+          const alertBox = document.getElementById("practice-toast");
+          if (alertBox) {
+            alertBox.innerText = `Đã lưu từ "${word}" vào sổ tay!`;
+            alertBox.classList.remove("hidden");
+            setTimeout(() => alertBox.classList.add("hidden"), 2000);
+          }
+        }
+      }
+
+      function handleDeleteVocabulary(word) {
+        STATE.vocabulary = STATE.vocabulary.filter(v => v.word !== word);
+        saveState();
+        render();
+      }
+
+      function handleExplainMistake(original, typed, resIndex) {
+        STATE.isLoading = true;
+        render();
+
+        callGemini("explain", { original, typed })
+          .then(res => {
+            STATE.practiceStats.sentencesResults[resIndex].explanation = res.text;
+            STATE.isLoading = false;
+            render();
+          })
+          .catch(err => {
+            STATE.practiceStats.sentencesResults[resIndex].explanation = "Không có giải thích trực tuyến. Vui lòng kiểm tra lại cấu hình API Key.";
+            STATE.isLoading = false;
+            render();
+          });
+      }
+
+      function handleCheckSentence(e) {
+        if (e) e.preventDefault();
+
+        // If already checked, ignore form submission (handled by next/retry buttons)
+        if (STATE.currentSentenceSubmitted) return;
+
+        const input = document.getElementById("typed-input");
+        const typed = input ? input.value.trim() : "";
+        if (!typed) {
+          alert("Vui lòng nhập câu trả lời của bạn!");
+          return;
+        }
+
+        STATE.typedText = typed;
+        
+        const original = STATE.currentLesson.sentences[STATE.currentSentenceIndex];
+        const diffs = alignAndDiff(original, typed);
+        const accuracy = calculateAccuracy(diffs);
+        const isPerfect = accuracy === 100;
+
+        STATE.currentSentenceSubmitted = true;
+        STATE.currentSentenceIsCorrect = isPerfect;
+        STATE.currentWordDiffs = diffs;
+        STATE.currentAiExplanation = "";
+        STATE.currentShowAnswer = false;
+
+        // Auto trigger AI explanation if imperfect and customApiKey is available
+        if (!isPerfect && STATE.settings.customApiKey) {
+          handleExplainCurrentSentenceMistake();
+        }
+
+        // Save misspelling to vocabulary automatically if accuracy < 100
+        diffs.forEach(d => {
+          if (d.type === "incorrect" || d.type === "missing") {
+            handleSaveWordToVocabulary(d.word, original);
+          }
+        });
+
+        // Award stats to user profile immediately if correct on first check
+        if (isPerfect) {
+          let xpReward = 30;
+          let coinReward = 10;
+
+          if (STATE.currentLesson.level === "easy") {
+            xpReward = 20; coinReward = 5;
+          } else if (STATE.currentLesson.level === "medium") {
+            xpReward = 35; coinReward = 10;
+          } else if (STATE.currentLesson.level === "hard") {
+            xpReward = 50; coinReward = 15;
+          }
+
+          STATE.stats.xp += xpReward;
+          STATE.stats.coins += coinReward;
+
+          // Level up check
+          const nextLevelThreshold = STATE.stats.level * 150;
+          if (STATE.stats.xp >= nextLevelThreshold) {
+            STATE.stats.level += 1;
+          }
+        }
+
+        saveState();
+        render();
+      }
+
+      function handleExplainCurrentSentenceMistake() {
+        const original = STATE.currentLesson.sentences[STATE.currentSentenceIndex];
+        const typed = STATE.typedText;
+
+        STATE.isLoading = true;
+        render();
+
+        callGemini("explain", { original, typed })
+          .then(res => {
+            STATE.currentAiExplanation = res.text;
+            STATE.isLoading = false;
+            render();
+          })
+          .catch(err => {
+            STATE.currentAiExplanation = "Không có giải thích trực tuyến. Vui lòng kiểm tra lại cấu hình API Key.";
+            STATE.isLoading = false;
+            render();
+          });
+      }
+
+      function handleRetrySentence() {
+        STATE.currentSentenceSubmitted = false;
+        STATE.currentSentenceIsCorrect = false;
+        STATE.currentWordDiffs = [];
+        STATE.currentAiExplanation = "";
+        STATE.currentShowAnswer = false;
+        STATE.currentAttemptsUsed++;
+
+        // Replay the audio
+        const sentence = STATE.currentLesson.sentences[STATE.currentSentenceIndex];
+        speakSentence(sentence);
+        STATE.listenCount++;
+
+        saveState();
+        render();
+      }
+
+      function handleShowSentenceAnswer() {
+        STATE.currentShowAnswer = true;
+        render();
+      }
+
+      function handleNextSentence() {
+        const original = STATE.currentLesson.sentences[STATE.currentSentenceIndex];
+        const typed = STATE.typedText || "";
+        const diffs = alignAndDiff(original, typed);
+        const accuracy = calculateAccuracy(diffs);
+        const wasPerfect = STATE.currentSentenceIsCorrect;
+
+        // Award partial rewards if imperfect
+        let xpReward = 0;
+        let coinReward = 0;
+
+        if (wasPerfect) {
+          xpReward = STATE.currentLesson.level === "easy" ? 20 : STATE.currentLesson.level === "medium" ? 35 : 50;
+          coinReward = STATE.currentLesson.level === "easy" ? 5 : STATE.currentLesson.level === "medium" ? 10 : 15;
+        } else {
+          // Partial reward for effort
+          xpReward = Math.round(accuracy * 0.15);
+          coinReward = Math.round(accuracy * 0.05);
+
+          STATE.stats.xp += xpReward;
+          STATE.stats.coins += coinReward;
+
+          // Level up check
+          const nextLevelThreshold = STATE.stats.level * 150;
+          if (STATE.stats.xp >= nextLevelThreshold) {
+            STATE.stats.level += 1;
+          }
+        }
+
+        // Add to active results
+        STATE.practiceStats.sentencesResults.push({
+          sentence: original,
+          typed: typed,
+          diffs: diffs,
+          accuracy: accuracy,
+          xpEarned: xpReward,
+          coinsEarned: coinReward,
+          wasPerfect: wasPerfect,
+          explanation: STATE.currentAiExplanation || ""
+        });
+
+        // Reset current sentence states
+        STATE.currentSentenceSubmitted = false;
+        STATE.currentSentenceIsCorrect = false;
+        STATE.currentWordDiffs = [];
+        STATE.currentAiExplanation = "";
+        STATE.currentShowAnswer = false;
+        STATE.currentAttemptsUsed = 1;
+
+        // Next sentence or complete lesson
+        if (STATE.currentSentenceIndex + 1 < STATE.currentLesson.sentences.length) {
+          STATE.currentSentenceIndex++;
+          STATE.typedText = "";
+          STATE.listenCount = 0;
+
+          saveState();
+
+          // Autoplay next sentence
+          setTimeout(() => {
+            speakSentence(STATE.currentLesson.sentences[STATE.currentSentenceIndex]);
+            STATE.listenCount = 1;
+            render();
+          }, 500);
+        } else {
+          // Completed lesson, compute total accuracy
+          const allRes = STATE.practiceStats.sentencesResults;
+          const avgAcc = Math.round(allRes.reduce((acc, curr) => acc + curr.accuracy, 0) / allRes.length);
+          const totalXp = allRes.reduce((acc, curr) => acc + curr.xpEarned, 0);
+          const totalCoins = allRes.reduce((acc, curr) => acc + curr.coinsEarned, 0);
+
+          STATE.history.unshift({
+            date: new Date().toLocaleDateString("vi-VN"),
+            lessonTitle: STATE.currentLesson.title,
+            accuracy: avgAcc,
+            xp: totalXp,
+            coins: totalCoins
+          });
+
+          saveState();
+          navigate("result");
+        }
+      }
+
+      function handleSaveSettings(e) {
+        e.preventDefault();
+        const voiceSelect = document.getElementById("settings-voice");
+        const rateSelect = document.getElementById("settings-rate");
+        const fontSelect = document.getElementById("settings-font");
+        const translateCheck = document.getElementById("settings-translate");
+        const themeSelect = document.getElementById("settings-theme");
+        const apiInput = document.getElementById("settings-api");
+
+        if (voiceSelect) STATE.settings.voiceURI = voiceSelect.value;
+        if (rateSelect) STATE.settings.speechRate = parseFloat(rateSelect.value);
+        if (fontSelect) STATE.settings.fontSize = fontSelect.value;
+        if (translateCheck) STATE.settings.alwaysShowTranslation = translateCheck.checked;
+        if (themeSelect) STATE.settings.theme = themeSelect.value;
+        if (apiInput) STATE.settings.customApiKey = apiInput.value.trim();
+
+        saveState();
+        applyTheme();
+        navigate("dashboard");
+      }
+
+      // ==========================================
+      // RENDERING ENGINE (HTML Templates)
+      // ==========================================
+      function render() {
+        const root = document.getElementById("root");
+        if (!root) return;
+
+        // Apply background/theme wrapper
+        const bgClass = STATE.settings.theme === "dark" ? "bg-[#0B1329]" : "bg-[#F0F7FF]";
+        root.className = `min-h-screen ${bgClass} transition-colors duration-300 pb-12`;
+
+        // Render Navbar if not in welcome screen
+        let navbarHtml = "";
+        if (STATE.screen !== "welcome") {
+          navbarHtml = `
+            <nav class="bg-white dark:bg-[#1E293B] border-b-3 border-slate-900 dark:border-slate-100 py-4 px-6 sticky top-0 z-50 transition-colors">
+              <div class="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                  <div class="p-2 bg-blue-500 text-white rounded-lg b-heavy border-slate-900 shadow-[2px_2px_0px_0px_#000] dark:shadow-none animate-bounce">
+                    ${getIcon("soundOn")}
+                  </div>
+                  <div>
+                    <h1 class="text-xl font-black tracking-tight cursor-pointer" onclick="navigate('dashboard')">DICTATION HERO</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-mono">Bản hùng ca chính tả tiếng Anh</p>
+                  </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-4 text-sm font-bold">
+                  <!-- User Badge / Stats -->
+                  <div class="flex items-center gap-2 bg-[#F1F5F9] dark:bg-slate-800 px-3 py-1.5 rounded-lg b-heavy border-slate-900 dark:border-slate-200">
+                    <span class="text-blue-500">${STATE.stats.username || "Anh hùng"}</span>
+                    <span class="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 px-1.5 py-0.5 rounded-md font-mono">LV ${STATE.stats.level}</span>
+                  </div>
+
+                  <!-- Streak -->
+                  <div class="flex items-center gap-1.5 bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 px-3 py-1.5 rounded-lg b-heavy border-slate-900 dark:border-slate-200">
+                    ${getIcon("flame")}
+                    <span>${STATE.stats.streak} ngày</span>
+                  </div>
+
+                  <!-- XP -->
+                  <div class="flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 px-3 py-1.5 rounded-lg b-heavy border-slate-900 dark:border-slate-200 font-mono">
+                    ${getIcon("award")}
+                    <span>${STATE.stats.xp} XP</span>
+                  </div>
+
+                  <!-- Coins -->
+                  <div class="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 px-3 py-1.5 rounded-lg b-heavy border-slate-900 dark:border-slate-200 font-mono">
+                    ${getIcon("star")}
+                    <span>${STATE.stats.coins} vàng</span>
+                  </div>
+                </div>
+              </div>
+            </nav>
+          `;
+        }
+
+        // Generate Page Content
+        let contentHtml = "";
+        switch (STATE.screen) {
+          case "welcome":
+            contentHtml = renderWelcome();
+            break;
+          case "dashboard":
+            contentHtml = renderDashboard();
+            break;
+          case "practice":
+            contentHtml = renderPractice();
+            break;
+          case "result":
+            contentHtml = renderResult();
+            break;
+          case "history":
+            contentHtml = renderHistory();
+            break;
+          case "achievements":
+            contentHtml = renderAchievements();
+            break;
+          case "creator":
+            contentHtml = renderLessonCreator();
+            break;
+          case "settings":
+            contentHtml = renderSettings();
+            break;
+          default:
+            contentHtml = renderDashboard();
+        }
+
+        root.innerHTML = `
+          ${navbarHtml}
+          <main class="max-w-6xl mx-auto px-4 mt-8">
+            ${STATE.isLoading ? renderLoader() : ""}
+            ${STATE.errorMsg ? renderErrorAlert() : ""}
+            <div class="${STATE.isLoading ? "opacity-50 pointer-events-none" : ""} transition-opacity">
+              ${contentHtml}
+            </div>
+          </main>
+        `;
+
+        // Bind event listeners after render
+        bindEvents();
+      }
+
+      function renderLoader() {
+        return `
+          <div class="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 flex items-center justify-center z-50">
+            <div class="bg-white dark:bg-slate-800 p-8 rounded-2xl b-heavy shadow-heavy flex flex-col items-center gap-4 max-w-sm text-center">
+              <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              <p class="font-bold text-slate-800 dark:text-white">Đang gọi trí tuệ nhân tạo Gemini...</p>
+              <p class="text-xs text-slate-500">Xin vui lòng đợi trong giây lát.</p>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderErrorAlert() {
+        return `
+          <div class="bg-rose-50 border-3 border-rose-900 dark:bg-rose-950/30 dark:border-rose-400 p-4 rounded-xl shadow-heavy mb-6 flex items-start gap-3">
+            <span class="text-rose-600 dark:text-rose-400 shrink-0 mt-0.5">${getIcon("alertCircle")}</span>
+            <div>
+              <h4 class="font-black text-rose-900 dark:text-rose-200">Đã xảy ra sự cố!</h4>
+              <p class="text-sm text-rose-700 dark:text-rose-300">${STATE.errorMsg}</p>
+            </div>
+          </div>
+        `;
+      }
+
+      // ==========================================
+      // VIEW: WELCOME SCREEN
+      // ==========================================
+      function renderWelcome() {
+        return `
+          <div class="min-h-[80vh] flex flex-col items-center justify-center py-12 px-4 text-center">
+            <div class="max-w-xl w-full bg-white dark:bg-slate-800 p-8 rounded-2xl b-heavy shadow-heavy transition-colors">
+              <div class="w-20 h-20 bg-blue-500 text-white rounded-2xl b-heavy border-slate-900 dark:border-white shadow-heavy mx-auto flex items-center justify-center mb-6 animate-bounce">
+                ${getIcon("soundOn")}
+              </div>
+              
+              <h2 class="text-4xl font-black tracking-tight mb-2 text-slate-900 dark:text-white">DICTATION HERO</h2>
+              <p class="text-slate-500 dark:text-slate-400 font-medium mb-8 text-sm uppercase tracking-wider">Chương trình luyện chính tả tiếng Anh toàn diện</p>
+              
+              <form id="welcome-form" class="space-y-6">
+                <div class="text-left">
+                  <label class="block text-sm font-black mb-2 uppercase text-slate-700 dark:text-slate-300">Tên anh hùng của bạn:</label>
+                  <input 
+                    type="text" 
+                    id="username-input" 
+                    required 
+                    placeholder="Nhập tên của bạn..." 
+                    class="w-full bg-slate-50 dark:bg-slate-900 b-heavy p-4 rounded-xl text-lg font-bold focus:ring-4 focus:ring-blue-200 outline-none focus:bg-white"
+                  />
+                </div>
+
+                <button 
+                  type="submit" 
+                  class="w-full bg-blue-500 hover:bg-blue-600 text-white font-black py-4 px-6 rounded-xl b-heavy border-slate-900 shadow-pop-blue active-pop text-lg uppercase tracking-wider"
+                >
+                  Bắt đầu cuộc hành trình
+                </button>
+              </form>
+
+              <div class="mt-8 border-t border-slate-100 dark:border-slate-700 pt-6 flex items-center justify-center gap-4 text-xs text-slate-500 font-bold uppercase">
+                <span>⚡ Phản hồi lỗi tức thì</span>
+                <span>•</span>
+                <span>🎓 Dịch nghĩa Gemini</span>
+                <span>•</span>
+                <span>🔥 Đồng hồ chuỗi</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // ==========================================
+      // VIEW: DASHBOARD
+      // ==========================================
+      function renderDashboard() {
+        // Prepare list of built-in levels
+        const easyLessons = DEFAULT_LESSONS.filter(l => l.level === "easy");
+        const medLessons = DEFAULT_LESSONS.filter(l => l.level === "medium");
+        const hardLessons = DEFAULT_LESSONS.filter(l => l.level === "hard");
+
+        let easyHtml = easyLessons.map(l => renderLessonCard(l)).join("");
+        let medHtml = medLessons.map(l => renderLessonCard(l)).join("");
+        let hardHtml = hardLessons.map(l => renderLessonCard(l)).join("");
+        let customHtml = STATE.customLessons.length > 0
+          ? STATE.customLessons.map(l => renderLessonCard(l)).join("")
+          : `
+            <div class="col-span-full border-3 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-8 text-center text-slate-500">
+              <p class="font-bold mb-3">Bạn chưa có bài học tùy chỉnh nào.</p>
+              <button onclick="navigate('creator')" class="bg-indigo-500 text-white font-black py-2.5 px-4 rounded-lg b-heavy border-slate-900 text-xs active-pop shadow-[2px_2px_0px_0px_#000]">
+                Tự Soạn Bài Đọc Ngay
+              </button>
+            </div>
+          `;
+
+        return `
+          <!-- Dashboard grid header -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Sidebar / Control -->
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-xl b-heavy border-slate-900 shadow-heavy flex flex-col gap-4">
+              <h3 class="text-lg font-black uppercase text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-700 pb-2">Hành động nhanh</h3>
+              
+              <button onclick="navigate('creator')" class="flex items-center gap-3 w-full bg-indigo-500 hover:bg-indigo-600 text-white font-black p-3.5 rounded-xl b-heavy border-slate-900 shadow-pop-blue active-pop text-left text-sm">
+                <span class="p-1.5 bg-white/20 rounded-md">${getIcon("plus")}</span>
+                Tự Soạn Bài Luyện AI
+              </button>
+
+              <button onclick="navigate('history')" class="flex items-center gap-3 w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black p-3.5 rounded-xl b-heavy border-slate-900 shadow-pop-emerald active-pop text-left text-sm">
+                <span class="p-1.5 bg-white/20 rounded-md">${getIcon("history")}</span>
+                Nhật Ký & Từ Điển
+              </button>
+
+              <button onclick="navigate('achievements')" class="flex items-center gap-3 w-full bg-amber-500 hover:bg-amber-600 text-white font-black p-3.5 rounded-xl b-heavy border-slate-900 shadow-[0px_6px_0px_0px_rgba(217,119,6,1)] active-pop text-left text-sm">
+                <span class="p-1.5 bg-white/20 rounded-md">${getIcon("award")}</span>
+                Bảng Huy Chương Bạc
+              </button>
+
+              <button onclick="navigate('settings')" class="flex items-center gap-3 w-full bg-slate-500 hover:bg-slate-600 text-white font-black p-3.5 rounded-xl b-heavy border-slate-900 shadow-[0px_6px_0px_0px_rgba(71,85,105,1)] active-pop text-left text-sm">
+                <span class="p-1.5 bg-white/20 rounded-md">${getIcon("settings")}</span>
+                Thiết Lập & Giọng Đọc
+              </button>
+            </div>
+
+            <!-- Stats Showcase Banner -->
+            <div class="md:col-span-2 bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-6 rounded-xl b-heavy border-slate-900 shadow-heavy relative overflow-hidden flex flex-col justify-between">
+              <div class="relative z-10">
+                <h3 class="text-2xl font-black mb-1">XIN CHÀO, ${STATE.stats.username?.toUpperCase() || "ANH HÙNG DŨNG CẢM"}!</h3>
+                <p class="text-sm opacity-90 max-w-md">Hãy vượt qua các cấp độ chính tả đầy thử thách để rèn luyện đôi tai sắc bén và đôi tay nhanh nhạy.</p>
+              </div>
+
+              <!-- Level progress bar -->
+              <div class="mt-8 relative z-10">
+                <div class="flex items-center justify-between text-xs font-mono font-bold mb-2">
+                  <span>CẤP ĐỘ HIỆN TẠI: ${STATE.stats.level}</span>
+                  <span>TIẾN TRÌNH: ${STATE.stats.xp} / ${STATE.stats.level * 150} XP</span>
+                </div>
+                <div class="w-full bg-black/30 h-4 rounded-full overflow-hidden b-heavy border-slate-900 dark:border-white">
+                  <div class="bg-amber-400 h-full rounded-full" style="width: ${Math.min(100, (STATE.stats.xp / (STATE.stats.level * 150)) * 100)}%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lessons Grid Group -->
+          <div class="space-y-8">
+            <!-- Custom Lessons Section -->
+            <div>
+              <div class="flex items-center gap-2 mb-4">
+                <span class="p-1 bg-indigo-500 text-white rounded-md">${getIcon("plus")}</span>
+                <h4 class="text-xl font-black uppercase text-slate-800 dark:text-white tracking-tight">Bài chính tả tự biên soạn</h4>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                ${customHtml}
+              </div>
+            </div>
+
+            <!-- Easy Section -->
+            <div>
+              <div class="flex items-center gap-2 mb-4">
+                <span class="p-1 bg-green-500 text-white rounded-md">${getIcon("school")}</span>
+                <h4 class="text-xl font-black uppercase text-slate-800 dark:text-white tracking-tight">Cấp độ: Sơ cấp (Easy)</h4>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                ${easyHtml}
+              </div>
+            </div>
+
+            <!-- Medium Section -->
+            <div>
+              <div class="flex items-center gap-2 mb-4">
+                <span class="p-1 bg-yellow-500 text-white rounded-md">${getIcon("bookOpen")}</span>
+                <h4 class="text-xl font-black uppercase text-slate-800 dark:text-white tracking-tight">Cấp độ: Trung cấp (Medium)</h4>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                ${medHtml}
+              </div>
+            </div>
+
+            <!-- Hard Section -->
+            <div>
+              <div class="flex items-center gap-2 mb-4">
+                <span class="p-1 bg-red-500 text-white rounded-md">${getIcon("award")}</span>
+                <h4 class="text-xl font-black uppercase text-slate-800 dark:text-white tracking-tight">Cấp độ: Cao cấp (Hard)</h4>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                ${hardHtml}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderLessonCard(l) {
+        const difficultyColors = {
+          easy: "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300",
+          medium: "bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300",
+          hard: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300",
+          custom: "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300"
+        };
+        const difficultyText = {
+          easy: "SƠ CẤP",
+          medium: "TRUNG CẤP",
+          hard: "NÂNG CAO",
+          custom: "TỰ SOẠN"
+        };
+
+        const listLength = l.sentences.length;
+
+        return `
+          <div class="bg-white dark:bg-slate-800 p-6 rounded-xl b-heavy border-slate-900 shadow-heavy flex flex-col justify-between hover:-translate-y-1 transition-all duration-200">
+            <div>
+              <div class="flex items-center justify-between gap-2 mb-3">
+                <span class="text-[10px] font-black px-2 py-0.5 rounded-full ${difficultyColors[l.level]}">${difficultyText[l.level]}</span>
+                <span class="text-xs text-slate-400 font-mono font-bold">${listLength} câu</span>
+              </div>
+              <h5 class="text-lg font-black text-slate-900 dark:text-white leading-tight mb-2">${l.title}</h5>
+              <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-6">${l.description}</p>
+            </div>
+
+            <button 
+              onclick="navigate('practice', { lesson: ${JSON.stringify(l).replace(/"/g, '&quot;')} })" 
+              class="w-full bg-slate-100 dark:bg-slate-700 hover:bg-blue-500 hover:text-white dark:hover:bg-blue-600 font-black py-2.5 px-4 rounded-lg b-heavy border-slate-900 dark:border-white text-xs tracking-wider transition-colors uppercase active-pop flex items-center justify-center gap-1"
+            >
+              Luyện Chính Tả
+              ${getIcon("chevronRight")}
+            </button>
+          </div>
+        `;
+      }
+
+      // ==========================================
+      // VIEW: PRACTICE SCREEN
+      // ==========================================
+      function renderPractice() {
+        const sentence = STATE.currentLesson.sentences[STATE.currentSentenceIndex];
+        const translation = STATE.translationCache[sentence] || "";
+        const isLastSentence = STATE.currentSentenceIndex === STATE.currentLesson.sentences.length - 1;
+
+        // Generate Word Diffs Markup if submitted
+        let diffMarkup = "";
+        if (STATE.currentSentenceSubmitted && STATE.currentWordDiffs.length > 0) {
+          diffMarkup = STATE.currentWordDiffs.map(d => {
+            if (d.type === "correct") {
+              return `<span class="bg-green-100 text-green-850 dark:bg-green-950/60 dark:text-green-300 px-2 py-1 rounded-md font-black border border-green-300 dark:border-green-800">${d.word}</span>`;
+            } else if (d.type === "incorrect") {
+              return `<span class="bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300 px-2 py-1 rounded-md font-black border border-red-300 dark:border-red-800 line-through mr-1" title="Bạn viết: ${d.word}">${d.word}</span><span class="bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 px-2 py-1 rounded-md font-black border border-amber-300 dark:border-amber-800" title="Đáp án: ${d.correction}">${d.correction}</span>`;
+            } else if (d.type === "missing") {
+              return `<span class="bg-yellow-100 text-yellow-850 dark:bg-yellow-950/60 dark:text-yellow-300 px-2 py-1 rounded-md font-black border border-yellow-300 dark:border-yellow-800 border-dashed" title="Thiếu từ: ${d.word}">${d.word}</span>`;
+            } else {
+              return `<span class="bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 px-2 py-1 rounded-md font-black border border-indigo-300 dark:border-indigo-800 line-through" title="Thừa từ: ${d.word}">${d.word}</span>`;
+            }
+          }).join(" ");
+        }
+
+        // Generate AI explanation markup
+        let explanationHtml = "";
+        if (STATE.currentSentenceSubmitted && !STATE.currentSentenceIsCorrect) {
+          if (STATE.currentAiExplanation) {
+            explanationHtml = `
+              <div class="p-4 bg-purple-50 dark:bg-purple-950/20 border-2 border-purple-900 dark:border-purple-600 rounded-xl text-left mt-4">
+                <span class="text-xs text-purple-600 dark:text-purple-400 font-black uppercase flex items-center gap-1 mb-1.5">
+                  ${getIcon("sparkles")} Giải thích lỗi sai từ AI:
+                </span>
+                <p class="text-sm text-slate-700 dark:text-slate-300 font-bold whitespace-pre-line leading-relaxed">${STATE.currentAiExplanation}</p>
+              </div>
+            `;
+          } else if (STATE.settings.customApiKey) {
+            explanationHtml = `
+              <div class="text-left mt-4">
+                <button 
+                  type="button"
+                  onclick="handleExplainCurrentSentenceMistake()" 
+                  class="bg-purple-100 hover:bg-purple-200 dark:bg-purple-950/50 dark:text-purple-300 font-black py-2.5 px-4 rounded-xl b-heavy border-slate-900 text-xs active-pop flex items-center gap-1.5"
+                >
+                  ${getIcon("sparkles")} Giải Thích Lỗi Sai Bằng AI
+                </button>
+              </div>
+            `;
+          }
+        }
+
+        return `
+          <div class="max-w-3xl mx-auto py-4">
+            <!-- Lesson title header -->
+            <div class="flex items-center justify-between mb-6">
+              <button onclick="navigate('dashboard')" class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 p-2.5 rounded-xl b-heavy border-slate-900 text-xs font-bold active-pop">
+                ${getIcon("arrowLeft")}
+                Trở về
+              </button>
+
+              <div class="text-center font-bold font-mono text-sm bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 px-4 py-1.5 rounded-xl b-heavy border-slate-900 dark:border-slate-200">
+                CÂU HỎI: ${STATE.currentSentenceIndex + 1} / ${STATE.currentLesson.sentences.length}
+              </div>
+            </div>
+
+            <!-- Main dictation card -->
+            <div class="bg-white dark:bg-slate-800 p-8 rounded-2xl b-heavy border-slate-900 shadow-heavy text-center relative mb-6">
+              <div id="practice-toast" class="hidden absolute top-4 left-1/2 -translate-x-1/2 bg-blue-500 text-white text-xs font-bold py-2 px-4 rounded-full shadow-lg"></div>
+
+              <!-- Animated speech trigger -->
+              <div class="flex flex-col items-center justify-center mb-8 relative">
+                <div class="w-24 h-24 bg-blue-500 text-white rounded-full flex items-center justify-center b-heavy border-slate-900 shadow-heavy cursor-pointer active-pop z-10 hover:bg-blue-600" onclick="handleSpeak(false)">
+                  ${getIcon("volume2")}
+                </div>
+                <!-- Interactive ripples -->
+                <div class="absolute w-24 h-24 bg-blue-300 rounded-full animate-ripple pointer-events-none"></div>
+
+                <div class="flex gap-4 mt-6">
+                  <button onclick="handleSpeak(false)" class="bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 font-black py-2 px-4 rounded-lg b-heavy border-slate-900 text-xs tracking-wider active-pop flex items-center gap-1">
+                    ${getIcon("play")} Nghe thường (1.0x)
+                  </button>
+                  <button onclick="handleSpeak(true)" class="bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 font-black py-2 px-4 rounded-lg b-heavy border-slate-900 text-xs tracking-wider active-pop flex items-center gap-1">
+                    ${getIcon("play")} Nghe chậm (0.7x)
+                  </button>
+                </div>
+                <p class="text-xs text-slate-400 dark:text-slate-500 font-mono mt-3">Lượt nghe đã ghi nhận: ${STATE.listenCount} lần</p>
+              </div>
+
+              <!-- Text Area input form -->
+              <form id="practice-check-form" class="space-y-6">
+                <div class="text-left">
+                  <label class="block text-sm font-black mb-2 uppercase text-slate-700 dark:text-slate-300">Nhập lại chính xác những gì bạn nghe được:</label>
+                  <textarea 
+                    id="typed-input" 
+                    required 
+                    ${STATE.currentSentenceSubmitted ? "disabled" : ""}
+                    placeholder="Hãy bắt đầu viết tại đây..." 
+                    class="w-full bg-slate-50 dark:bg-slate-900 b-heavy p-4 rounded-xl text-lg font-bold focus:ring-4 focus:ring-blue-200 outline-none focus:bg-white text-center font-mono ${STATE.settings.fontSize === "small" ? "text-base" : STATE.settings.fontSize === "large" ? "text-2xl" : "text-xl"}"
+                    rows="3"
+                  >${STATE.typedText || ""}</textarea>
+                </div>
+
+                ${!STATE.currentSentenceSubmitted ? `
+                  <div class="flex gap-4">
+                    <button 
+                      type="button" 
+                      onclick="handleShowTranslation()" 
+                      class="w-1/2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white font-black py-3 px-6 rounded-xl b-heavy border-slate-900 text-sm uppercase tracking-wider active-pop flex items-center justify-center gap-2"
+                    >
+                      ${getIcon("eye")} Dịch nghĩa câu
+                    </button>
+
+                    <button 
+                      type="submit" 
+                      class="w-1/2 bg-blue-500 hover:bg-blue-600 text-white font-black py-3 px-6 rounded-xl b-heavy border-slate-900 shadow-pop-blue active-pop text-sm uppercase tracking-wider flex items-center justify-center gap-1"
+                    >
+                      Kiểm tra đáp án 🔍
+                    </button>
+                  </div>
+                ` : ""}
+              </form>
+
+              <!-- Evaluation Feedback Section (Visible only when submitted) -->
+              ${STATE.currentSentenceSubmitted ? `
+                <div class="mt-6 border-t-3 border-slate-900 dark:border-slate-700 pt-6 text-left space-y-6">
+                  <!-- Result Alert Header -->
+                  <div class="flex items-center gap-3 p-4 rounded-xl b-heavy ${STATE.currentSentenceIsCorrect ? "bg-green-50 dark:bg-green-950/30 border-green-900 dark:border-green-800 text-green-700 dark:text-green-300" : "bg-rose-50 dark:bg-rose-950/30 border-rose-900 dark:border-rose-800 text-rose-700 dark:text-rose-300"}">
+                    ${STATE.currentSentenceIsCorrect ? `
+                      <span class="text-xl">${getIcon("checkCircle")}</span>
+                      <div>
+                        <h4 class="text-base font-black uppercase leading-none">Đúng rồi! Cực Đỉnh 🎉</h4>
+                        <span class="text-xs text-slate-500 dark:text-slate-400 font-bold block mt-1">Bạn đã viết chính xác hoàn toàn câu văn này!</span>
+                      </div>
+                    ` : `
+                      <span class="text-xl">${getIcon("alertCircle")}</span>
+                      <div>
+                        <h4 class="text-base font-black uppercase leading-none">Chưa hoàn toàn chính xác! ❌</h4>
+                        <span class="text-xs text-slate-500 dark:text-slate-400 font-bold block mt-1">Hãy xem các từ bị viết sai bên dưới để sửa lại nhé.</span>
+                      </div>
+                    `}
+                  </div>
+
+                  <!-- Word Diffs visual mapping -->
+                  <div class="space-y-1.5">
+                    <span class="text-xs font-black text-slate-400 uppercase tracking-wider block">So sánh chi tiết lỗi sai:</span>
+                    <div class="flex flex-wrap gap-2.5 bg-slate-50 dark:bg-slate-900 p-5 rounded-xl b-heavy border-slate-900 text-lg leading-relaxed font-bold">
+                      ${diffMarkup}
+                    </div>
+                  </div>
+
+                  <!-- Show Answer block (Visible if correct, or when user clicks 'Hiện đáp án') -->
+                  ${(STATE.currentSentenceIsCorrect || STATE.currentShowAnswer) ? `
+                    <div class="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-xl b-heavy border-slate-900">
+                      <span class="text-[10px] font-black uppercase text-blue-500 block mb-1">Đáp án chính xác:</span>
+                      <p class="text-base font-extrabold text-slate-800 dark:text-slate-100 select-all leading-relaxed">"${sentence}"</p>
+                    </div>
+                  ` : ""}
+
+                  <!-- AI Explanation -->
+                  ${explanationHtml}
+
+                  <!-- Action controls after submitting -->
+                  <div class="flex gap-4 pt-2">
+                    ${(STATE.currentSentenceIsCorrect || STATE.currentShowAnswer) ? `
+                      <button 
+                        type="button" 
+                        onclick="handleNextSentence()" 
+                        class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3.5 px-6 rounded-xl b-heavy border-slate-900 shadow-[4px_4px_0_#000] active-pop text-sm uppercase tracking-wider flex items-center justify-center gap-1.5"
+                      >
+                        ${isLastSentence ? "Hoàn thành bài tập 🏁" : "Câu tiếp theo ➡️"}
+                      </button>
+                    ` : `
+                      <button 
+                        type="button" 
+                        onclick="handleRetrySentence()" 
+                        class="w-1/2 bg-amber-400 hover:bg-amber-500 text-slate-900 font-black py-3 px-6 rounded-xl b-heavy border-slate-900 shadow-[4px_4px_0_#000] active-pop text-sm uppercase tracking-wider flex items-center justify-center gap-1.5"
+                      >
+                        ${getIcon("refresh")} Nghe và viết lại 🔁
+                      </button>
+                      <button 
+                        type="button" 
+                        onclick="handleShowSentenceAnswer()" 
+                        class="w-1/2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white font-black py-3 px-6 rounded-xl b-heavy border-slate-900 shadow-[4px_4px_0_#000] active-pop text-sm uppercase tracking-wider flex items-center justify-center gap-1.5"
+                      >
+                        ${getIcon("eye")} Hiện đáp án 👁️
+                      </button>
+                    `}
+                  </div>
+                </div>
+              ` : ""}
+
+              <!-- Realtime loaded Translation box -->
+              ${translation ? `
+                <div class="mt-8 border-t-3 border-slate-900 dark:border-slate-700 pt-6 text-left">
+                  <div class="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 font-black uppercase mb-1.5">
+                    ${getIcon("sparkles")} Trí Tuệ Nhân Tạo Gemini dịch nghĩa:
+                  </div>
+                  <p class="text-slate-600 dark:text-slate-300 font-bold text-lg italic bg-slate-50 dark:bg-slate-900 p-4 rounded-xl b-heavy border-slate-900">${translation}</p>
+                </div>
+              ` : ""}
+            </div>
+
+            <!-- Professional Tips/Rules notice -->
+            <div class="bg-amber-50 border-3 border-amber-900 dark:bg-amber-950/20 dark:border-amber-400/50 p-4 rounded-xl flex gap-3">
+              <span class="text-amber-500 shrink-0 mt-0.5">${getIcon("info")}</span>
+              <p class="text-xs text-amber-800 dark:text-amber-300 leading-relaxed font-bold">
+                Mẹo hay chính tả: Thuật toán so khớp thông minh sẽ tự động chuẩn hóa dấu câu và ký tự viết hoa khi tính độ chính xác. Đừng lo lắng về các dấu phẩy hoặc dấu chấm câu nhỏ!
+              </p>
+            </div>
+          </div>
+        `;
+      }
+
+      // ==========================================
+      // VIEW: RESULT SCREEN
+      // ==========================================
+      function renderResult() {
+        const results = STATE.practiceStats.sentencesResults;
+        const totalAccuracy = Math.round(results.reduce((acc, curr) => acc + curr.accuracy, 0) / results.length);
+        const totalXp = results.reduce((acc, curr) => acc + curr.xpEarned, 0);
+        const totalCoins = results.reduce((acc, curr) => acc + curr.coinsEarned, 0);
+
+        let resultsListHtml = results.map((r, index) => {
+          // Generate detailed inline colored word diff markup
+          let diffMarkup = r.diffs.map(d => {
+            if (d.type === "correct") {
+              return `<span class="bg-green-100 text-green-700 dark:bg-green-950/60 dark:text-green-300 px-1.5 py-0.5 rounded-md font-black border border-green-300 dark:border-green-800">${d.word}</span>`;
+            } else if (d.type === "incorrect") {
+              return `<span class="bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300 px-1.5 py-0.5 rounded-md font-black border border-red-300 dark:border-red-800 line-through mr-1" title="Bạn viết sai">${d.word}</span><span class="bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 px-1.5 py-0.5 rounded-md font-black border border-amber-300 dark:border-amber-800" title="Đáng lẽ phải viết">${d.correction}</span>`;
+            } else if (d.type === "missing") {
+              return `<span class="bg-yellow-100 text-yellow-700 dark:bg-yellow-950/60 dark:text-yellow-300 px-1.5 py-0.5 rounded-md font-black border border-yellow-300 dark:border-yellow-800 border-dashed" title="Từ bị thiếu">${d.word}</span>`;
+            } else {
+              return `<span class="bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 px-1.5 py-0.5 rounded-md font-black border border-indigo-300 dark:border-indigo-800 line-through" title="Từ thừa">${d.word}</span>`;
+            }
+          }).join(" ");
+
+          return `
+            <div class="p-6 bg-slate-50 dark:bg-slate-900 rounded-xl b-heavy border-slate-900 dark:border-slate-700 flex flex-col gap-4">
+              <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2.5">
+                <span class="text-xs bg-slate-200 dark:bg-slate-800 px-2 py-1 rounded font-bold">CÂU ${index + 1}</span>
+                <span class="text-sm font-black text-blue-500 font-mono">${r.accuracy}% chính xác</span>
+              </div>
+
+              <div>
+                <p class="text-xs font-mono font-bold text-slate-400 mb-1">KẾT QUẢ SO KHỚP CHÍNH TẢ:</p>
+                <div class="flex flex-wrap gap-2 text-lg leading-loose font-mono">${diffMarkup}</div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-bold pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div>
+                  <span class="text-slate-400">Bạn đã viết:</span>
+                  <p class="font-mono text-slate-700 dark:text-slate-300 text-sm italic">"${r.typed || "(bỏ trống)"}"</p>
+                </div>
+                <div>
+                  <span class="text-slate-400">Đáp án gốc:</span>
+                  <p class="font-mono text-slate-700 dark:text-slate-300 text-sm">"${r.sentence}"</p>
+                </div>
+              </div>
+
+              <!-- AI Explain Button & Container -->
+              <div class="pt-2">
+                ${r.explanation ? `
+                  <div class="p-4 bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-900 rounded-lg">
+                    <span class="text-xs text-blue-600 dark:text-blue-400 font-black uppercase flex items-center gap-1 mb-1">
+                      ${getIcon("sparkles")} Giải thích từ giáo viên Gemini:
+                    </span>
+                    <p class="text-sm text-slate-700 dark:text-slate-300 font-medium whitespace-pre-line leading-relaxed">${r.explanation}</p>
+                  </div>
+                ` : `
+                  <button 
+                    onclick="handleExplainMistake('${r.sentence.replace(/'/g, "\\'")}', '${r.typed.replace(/'/g, "\\'")}', ${index})" 
+                    class="bg-blue-100 hover:bg-blue-200 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 font-black py-2 px-4 rounded-lg b-heavy border-slate-900 text-xs active-pop flex items-center gap-1.5"
+                  >
+                    ${getIcon("sparkles")} Giải Thích Lỗi Sai Bằng AI
+                  </button>
+                `}
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        return `
+          <div class="max-w-4xl mx-auto py-4">
+            <!-- Header banner with stars -->
+            <div class="bg-gradient-to-br from-indigo-500 to-blue-600 text-white p-8 rounded-2xl b-heavy border-slate-900 shadow-heavy text-center mb-8 relative">
+              <span class="text-6xl mb-4 inline-block">🎉</span>
+              <h2 class="text-3xl font-black mb-1.5">BÀI THI HOÀN THÀNH!</h2>
+              <p class="text-sm opacity-90 max-w-md mx-auto mb-6">Xin chúc mừng anh hùng! Hãy cùng xem qua thống kê hiệu suất chép chính tả của bạn bên dưới.</p>
+
+              <!-- Visual dashboard with stats -->
+              <div class="grid grid-cols-3 gap-4 max-w-lg mx-auto bg-black/20 p-4 rounded-xl b-heavy border-slate-900">
+                <div class="text-center">
+                  <span class="text-[10px] font-black opacity-80 block uppercase">Độ chính xác</span>
+                  <span class="text-2xl font-black text-amber-300 font-mono">${totalAccuracy}%</span>
+                </div>
+                <div class="text-center border-x border-white/20">
+                  <span class="text-[10px] font-black opacity-80 block uppercase">XP nhận được</span>
+                  <span class="text-2xl font-black text-green-300 font-mono">+${totalXp}</span>
+                </div>
+                <div class="text-center">
+                  <span class="text-[10px] font-black opacity-80 block uppercase">Vàng thưởng</span>
+                  <span class="text-2xl font-black text-yellow-300 font-mono">+${totalCoins}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Detailed feedback review per sentence -->
+            <div class="space-y-6 mb-8">
+              <h3 class="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2">
+                ${getIcon("school")} Nhận xét chi tiết từng câu văn
+              </h3>
+              ${resultsListHtml}
+            </div>
+
+            <!-- Action footer buttons -->
+            <div class="flex gap-4">
+              <button onclick="navigate('dashboard')" class="w-1/2 bg-blue-500 hover:bg-blue-600 text-white font-black py-4 px-6 rounded-xl b-heavy border-slate-900 shadow-pop-blue active-pop text-sm uppercase tracking-wider flex items-center justify-center gap-1">
+                ${getIcon("arrowLeft")} Trở về trang chủ
+              </button>
+              
+              <button 
+                onclick="navigate('practice', { lesson: ${JSON.stringify(STATE.currentLesson).replace(/"/g, '&quot;')} })" 
+                class="w-1/2 bg-emerald-500 hover:bg-emerald-600 text-white font-black py-4 px-6 rounded-xl b-heavy border-slate-900 shadow-pop-emerald active-pop text-sm uppercase tracking-wider flex items-center justify-center gap-1.5"
+              >
+                ${getIcon("refresh")} Luyện tập lại bài học này
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      // ==========================================
+      // VIEW: HISTORY SCREEN & VOCAB NOTEBOOK
+      // ==========================================
+      function renderHistory() {
+        let historyHtml = STATE.history.length > 0
+          ? STATE.history.map(h => `
+            <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 font-mono">
+              <div>
+                <span class="text-xs text-slate-400 font-bold block">${h.date}</span>
+                <span class="text-sm font-black text-slate-800 dark:text-white">${h.lessonTitle}</span>
+              </div>
+              <div class="flex items-center gap-4 text-xs font-bold">
+                <span class="text-blue-500">${h.accuracy}% chính xác</span>
+                <span class="text-green-500">+${h.xp} XP</span>
+                <span class="text-yellow-500">+${h.coins} vàng</span>
+              </div>
+            </div>
+          `).join("")
+          : `
+            <div class="p-8 text-center text-slate-500">
+              <p class="font-bold">Bạn chưa hoàn thành bài chính tả nào.</p>
+            </div>
+          `;
+
+        let vocabHtml = STATE.vocabulary.length > 0
+          ? STATE.vocabulary.map(v => `
+            <div class="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-4">
+              <div>
+                <span class="text-lg font-black text-rose-500 font-mono block">${v.word}</span>
+                <span class="text-xs text-slate-400 font-bold">Mẫu câu: "${v.context}"</span>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <button onclick="speakSentence('${v.word.replace(/'/g, "\\'")}')" class="p-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg b-heavy border-slate-900 active-pop">
+                  ${getIcon("volume1")}
+                </button>
+                <button onclick="handleDeleteVocabulary('${v.word.replace(/'/g, "\\'")}')" class="p-2 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg b-heavy border-slate-900 active-pop">
+                  ${getIcon("trash")}
+                </button>
+              </div>
+            </div>
+          `).join("")
+          : `
+            <div class="p-8 text-center text-slate-500">
+              <p class="font-bold">Sổ tay từ vựng trống. Những từ bạn viết sai trong quá trình học sẽ được tự động lưu vào đây!</p>
+            </div>
+          `;
+
+        return `
+          <div class="max-w-4xl mx-auto py-4">
+            <div class="flex items-center justify-between mb-6">
+              <button onclick="navigate('dashboard')" class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 p-2.5 rounded-xl b-heavy border-slate-900 text-xs font-bold active-pop">
+                ${getIcon("arrowLeft")} Trở về
+              </button>
+              <h2 class="text-xl font-black uppercase text-slate-800 dark:text-white">Lưu trữ hoạt động cá nhân</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <!-- Diary history column -->
+              <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl b-heavy border-slate-900 shadow-heavy">
+                <h3 class="text-lg font-black border-b border-slate-100 dark:border-slate-700 pb-3 mb-4 uppercase tracking-tight flex items-center gap-2 text-slate-900 dark:text-white">
+                  ${getIcon("history")} Nhật ký luyện chính tả
+                </h3>
+                <div class="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+                  ${historyHtml}
+                </div>
+              </div>
+
+              <!-- Vocabulary Notebook column -->
+              <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl b-heavy border-slate-900 shadow-heavy">
+                <h3 class="text-lg font-black border-b border-slate-100 dark:border-slate-700 pb-3 mb-4 uppercase tracking-tight flex items-center gap-2 text-slate-900 dark:text-white">
+                  ${getIcon("bookOpen")} Sổ tay từ vựng bị viết sai
+                </h3>
+                <div class="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+                  ${vocabHtml}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // ==========================================
+      // VIEW: ACHIEVEMENTS / BADGES
+      // ==========================================
+      function renderAchievements() {
+        const totalSessions = STATE.history.length;
+        const totalXp = STATE.stats.xp;
+        const streakDays = STATE.stats.streak;
+
+        let badgesListHtml = DEFAULT_BADGES.map(badge => {
+          let progress = 0;
+          let currentVal = 0;
+          if (badge.targetType === "sessions") {
+            currentVal = totalSessions;
+            progress = (totalSessions / badge.target) * 100;
+          } else if (badge.targetType === "xp") {
+            currentVal = totalXp;
+            progress = (totalXp / badge.target) * 100;
+          } else if (badge.targetType === "streak") {
+            currentVal = streakDays;
+            progress = (streakDays / badge.target) * 100;
+          }
+
+          const isUnlocked = progress >= 100;
+          progress = Math.min(100, progress);
+
+          return `
+            <div class="p-6 bg-slate-50 dark:bg-slate-900 rounded-xl b-heavy border-slate-900 flex items-start gap-4 hover:bg-slate-100/50 transition-colors">
+              <div class="w-14 h-14 rounded-xl b-heavy border-slate-900 flex items-center justify-center shrink-0 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${isUnlocked ? "bg-amber-400 text-amber-950" : "bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-600"}">
+                ${getIcon(badge.icon)}
+              </div>
+
+              <div class="flex-grow">
+                <div class="flex items-center justify-between mb-1">
+                  <h4 class="font-black text-slate-900 dark:text-white">${badge.name}</h4>
+                  <span class="text-[10px] font-black tracking-wider px-2 py-0.5 rounded-full ${isUnlocked ? "bg-green-100 text-green-700" : "bg-slate-200 text-slate-500"}">
+                    ${isUnlocked ? "ĐÃ MỞ KHÓA" : "ĐANG KHÓA"}
+                  </span>
+                </div>
+                <p class="text-xs text-slate-500 mb-4">${badge.desc}</p>
+                
+                <!-- Live progress bar -->
+                <div class="flex items-center justify-between text-[10px] font-mono font-bold mb-1 text-slate-400">
+                  <span>TIẾN ĐỘ:</span>
+                  <span>${currentVal} / ${badge.target}</span>
+                </div>
+                <div class="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden b-heavy border-slate-900">
+                  <div class="bg-amber-400 h-full rounded-full" style="width: ${progress}%"></div>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        return `
+          <div class="max-w-3xl mx-auto py-4">
+            <div class="flex items-center justify-between mb-6">
+              <button onclick="navigate('dashboard')" class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 p-2.5 rounded-xl b-heavy border-slate-900 text-xs font-bold active-pop">
+                ${getIcon("arrowLeft")} Trở về
+              </button>
+              <h2 class="text-xl font-black uppercase text-slate-800 dark:text-white">Bảng tích lũy huy chương danh dự</h2>
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 p-8 rounded-2xl b-heavy border-slate-900 shadow-heavy">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                ${badgesListHtml}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // ==========================================
+      // VIEW: LESSON CREATOR (GEMINI POWERED)
+      // ==========================================
+      function renderLessonCreator() {
+        return `
+          <div class="max-w-2xl mx-auto py-4">
+            <div class="flex items-center justify-between mb-6">
+              <button onclick="navigate('dashboard')" class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 p-2.5 rounded-xl b-heavy border-slate-900 text-xs font-bold active-pop">
+                ${getIcon("arrowLeft")} Trở về
+              </button>
+              <h2 class="text-xl font-black uppercase text-slate-800 dark:text-white">Trình soạn thảo bài học thông minh</h2>
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 p-8 rounded-2xl b-heavy border-slate-900 shadow-heavy">
+              <div class="flex items-start gap-3 bg-indigo-50 border-3 border-indigo-900 dark:bg-indigo-950/20 dark:border-indigo-400 p-4 rounded-xl mb-6">
+                <span class="text-indigo-600 shrink-0 mt-0.5">${getIcon("sparkles")}</span>
+                <p class="text-xs text-indigo-900 dark:text-indigo-300 font-bold leading-relaxed">
+                  Nhập văn bản tiếng Anh của bạn và công nghệ trí tuệ nhân tạo Gemini sẽ tự động bóc tách thành các câu đơn rời rạc để sẵn sàng chép chính tả!
+                </p>
+              </div>
+
+              <form id="creator-form" class="space-y-6">
+                <div>
+                  <label class="block text-sm font-black mb-1.5 uppercase text-slate-700 dark:text-slate-300">Tiêu đề bài viết:</label>
+                  <input 
+                    type="text" 
+                    id="creator-title" 
+                    required 
+                    placeholder="Ví dụ: My Favorite Travel Story..." 
+                    class="w-full bg-slate-50 dark:bg-slate-900 b-heavy p-3 rounded-lg font-bold outline-none focus:bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-sm font-black mb-1.5 uppercase text-slate-700 dark:text-slate-300">Mô tả ngắn gọn:</label>
+                  <input 
+                    type="text" 
+                    id="creator-desc" 
+                    placeholder="Ví dụ: Cùng tìm hiểu và viết chính tả về các trải nghiệm du lịch thú vị..." 
+                    class="w-full bg-slate-50 dark:bg-slate-900 b-heavy p-3 rounded-lg font-bold outline-none focus:bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-sm font-black mb-1.5 uppercase text-slate-700 dark:text-slate-300">Nội dung văn bản tiếng Anh chính tả:</label>
+                  <textarea 
+                    id="creator-text" 
+                    required 
+                    placeholder="Hãy dán hoặc gõ toàn bộ bài viết, đoạn văn tiếng Anh của bạn vào đây..." 
+                    rows="6"
+                    class="w-full bg-slate-50 dark:bg-slate-900 b-heavy p-4 rounded-xl font-bold font-mono outline-none focus:bg-white leading-relaxed"
+                  ></textarea>
+                </div>
+
+                <button 
+                  type="submit" 
+                  class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-black py-4 px-6 rounded-xl b-heavy border-slate-900 shadow-pop-blue active-pop text-sm uppercase tracking-wider flex items-center justify-center gap-2"
+                >
+                  ${getIcon("sparkles")} Bóc Tách Câu & Lưu Trữ Bài Luyện
+                </button>
+              </form>
+            </div>
+          </div>
+        `;
+      }
+
+      // ==========================================
+      // VIEW: SETTINGS SCREEN
+      // ==========================================
+      function renderSettings() {
+        const voices = getVoicesList();
+        let voicesOptions = voices.map(v => {
+          const selectedAttr = STATE.settings.voiceURI === v.voiceURI ? "selected" : "";
+          return `<option value="${v.voiceURI}" ${selectedAttr}>${v.name} (${v.lang})</option>`;
+        }).join("");
+
+        if (!voicesOptions) {
+          voicesOptions = `<option value="">(Không tìm thấy giọng đọc. Hệ thống dùng mặc định)</option>`;
+        }
+
+        return `
+          <div class="max-w-2xl mx-auto py-4">
+            <div class="flex items-center justify-between mb-6">
+              <button onclick="navigate('dashboard')" class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 p-2.5 rounded-xl b-heavy border-slate-900 text-xs font-bold active-pop">
+                ${getIcon("arrowLeft")} Trở về
+              </button>
+              <h2 class="text-xl font-black uppercase text-slate-800 dark:text-white">Thiết lập cấu hình âm thanh</h2>
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 p-8 rounded-2xl b-heavy border-slate-900 shadow-heavy">
+              <form id="settings-form" class="space-y-6">
+                <!-- Select TTS voice -->
+                <div>
+                  <label class="block text-sm font-black mb-1.5 uppercase text-slate-700 dark:text-slate-300">Chọn giọng đọc tiếng Anh của bạn:</label>
+                  <select id="settings-voice" class="w-full bg-slate-50 dark:bg-slate-900 b-heavy p-3 rounded-lg font-bold outline-none">
+                    ${voicesOptions}
+                  </select>
+                </div>
+
+                <!-- Rate speech rate -->
+                <div>
+                  <label class="block text-sm font-black mb-1.5 uppercase text-slate-700 dark:text-slate-300">Tốc độ phát âm chuẩn:</label>
+                  <select id="settings-rate" class="w-full bg-slate-50 dark:bg-slate-900 b-heavy p-3 rounded-lg font-bold outline-none">
+                    <option value="0.7" ${STATE.settings.speechRate === 0.7 ? "selected" : ""}>Chậm (0.7x)</option>
+                    <option value="1.0" ${STATE.settings.speechRate === 1.0 ? "selected" : ""}>Bình thường (1.0x)</option>
+                    <option value="1.2" ${STATE.settings.speechRate === 1.2 ? "selected" : ""}>Nhanh (1.2x)</option>
+                    <option value="1.5" ${STATE.settings.speechRate === 1.5 ? "selected" : ""}>Rất nhanh (1.5x)</option>
+                  </select>
+                </div>
+
+                <!-- Custom Font Sizing -->
+                <div>
+                  <label class="block text-sm font-black mb-1.5 uppercase text-slate-700 dark:text-slate-300">Cỡ chữ ô nhập chính tả:</label>
+                  <select id="settings-font" class="w-full bg-slate-50 dark:bg-slate-900 b-heavy p-3 rounded-lg font-bold outline-none">
+                    <option value="small" ${STATE.settings.fontSize === "small" ? "selected" : ""}>Nhỏ</option>
+                    <option value="medium" ${STATE.settings.fontSize === "medium" ? "selected" : ""}>Vừa</option>
+                    <option value="large" ${STATE.settings.fontSize === "large" ? "selected" : ""}>Lớn</option>
+                  </select>
+                </div>
+
+                <!-- Select Visual Theme theme -->
+                <div>
+                  <label class="block text-sm font-black mb-1.5 uppercase text-slate-700 dark:text-slate-300">Chủ đề giao diện trực quan:</label>
+                  <select id="settings-theme" class="w-full bg-slate-50 dark:bg-slate-900 b-heavy p-3 rounded-lg font-bold outline-none">
+                    <option value="light" ${STATE.settings.theme === "light" ? "selected" : ""}>Chế độ sáng (Light Mode)</option>
+                    <option value="dark" ${STATE.settings.theme === "dark" ? "selected" : ""}>Chế độ tối (Dark Mode)</option>
+                  </select>
+                </div>
+
+                <!-- Google Gemini Custom API Key -->
+                <div>
+                  <label class="block text-sm font-black mb-1.5 uppercase text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    ${getIcon("key")} Custom Google Gemini API Key (Không bắt buộc):
+                  </label>
+                  <input 
+                    type="password" 
+                    id="settings-api" 
+                    placeholder="Dán mã API Key của bạn tại đây để dùng độc lập..." 
+                    value="${STATE.settings.customApiKey || ""}"
+                    class="w-full bg-slate-50 dark:bg-slate-900 b-heavy p-3 rounded-lg font-bold outline-none focus:bg-white"
+                  />
+                  <p class="text-[10px] text-slate-400 mt-1 font-bold">Nếu không nhập, hệ thống sẽ sử dụng kết nối máy chủ Cloud Sandbox có sẵn làm mặc định.</p>
+                </div>
+
+                <button 
+                  type="submit" 
+                  class="w-full bg-blue-500 hover:bg-blue-600 text-white font-black py-4 px-6 rounded-xl b-heavy border-slate-900 shadow-pop-blue active-pop text-sm uppercase tracking-wider"
+                >
+                  Lưu thiết lập của tôi
+                </button>
+              </form>
+            </div>
+          </div>
+        `;
+      }
+
+      // ==========================================
+      // EVENT BINDINGS (Dynamic Interaction Bridge)
+      // ==========================================
+      function bindEvents() {
+        // Welcome Submit Form
+        const welcomeForm = document.getElementById("welcome-form");
+        if (welcomeForm) {
+          welcomeForm.addEventListener("submit", handleWelcomeSubmit);
+        }
+
+        // Creator Submit Form
+        const creatorForm = document.getElementById("creator-form");
+        if (creatorForm) {
+          creatorForm.addEventListener("submit", handleSaveCustomLesson);
+        }
+
+        // Check Dictation Form
+        const practiceForm = document.getElementById("practice-check-form");
+        if (practiceForm) {
+          practiceForm.addEventListener("submit", handleCheckSentence);
+        }
+
+        // Settings Submit Form
+        const settingsForm = document.getElementById("settings-form");
+        if (settingsForm) {
+          settingsForm.addEventListener("submit", handleSaveSettings);
+        }
+      }
+
+      // ==========================================
+      // INITIAL STARTUP SEQUENCE
+      // ==========================================
+      window.addEventListener("DOMContentLoaded", () => {
+        loadState();
+        
+        // Wait for Speech synthesis voice lists to fully register
+        if (synth && synth.onvoiceschanged !== undefined) {
+          synth.onvoiceschanged = () => {
+            render();
+          };
+        }
+
+        // Direct Route to dashboard if already named, otherwise welcome
+        if (STATE.stats.username) {
+          navigate("dashboard");
+        } else {
+          navigate("welcome");
+        }
+      });
+    </script>
+  </body>
+</html>
