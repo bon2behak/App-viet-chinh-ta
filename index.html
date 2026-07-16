@@ -69,6 +69,7 @@
       // ==========================================
       const ICONS = {
         award: '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7" /><path stroke-linecap="round" stroke-linejoin="round" d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12" /></svg>',
+        pencil: '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>',
         sparkles: '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>',
         arrowLeft: '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>',
         plus: '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>',
@@ -197,6 +198,7 @@
         currentAiExplanation: "",
         currentShowAnswer: false,
         currentAttemptsUsed: 1,
+        editingLessonId: null,
         practiceStats: {
           sentencesResults: [], // { sentence, typed, diffs, accuracy, xpEarned, coinsEarned, wasPerfect, explanation }
           startTime: 0
@@ -578,32 +580,66 @@ Explain clearly what they wrote wrong and why it should be corrected. Keep it fr
             const list = data.sentences || regexSplitSentences(text);
             if (!list || list.length === 0) throw new Error("Không thể trích xuất câu văn.");
             
-            const newLesson = {
-              id: "custom-" + Date.now(),
-              level: "custom",
-              title,
-              description: desc || "Bài học tùy chỉnh tự biên soạn.",
-              sentences: list
-            };
-
-            STATE.customLessons.unshift(newLesson);
+            if (STATE.editingLessonId) {
+              const idx = STATE.customLessons.findIndex(l => l.id === STATE.editingLessonId);
+              if (idx !== -1) {
+                STATE.customLessons[idx].title = title;
+                STATE.customLessons[idx].description = desc || "Bài học tùy chỉnh tự biên soạn.";
+                STATE.customLessons[idx].sentences = list;
+              }
+              STATE.editingLessonId = null;
+            } else {
+              const newLesson = {
+                id: "custom-" + Date.now(),
+                level: "custom",
+                title,
+                description: desc || "Bài học tùy chỉnh tự biên soạn.",
+                sentences: list
+              };
+              STATE.customLessons.unshift(newLesson);
+            }
             saveState();
             navigate("dashboard");
           })
           .catch(err => {
             console.warn("Dùng tách câu regex ngoại tuyến:", err);
             const list = regexSplitSentences(text);
-            const newLesson = {
-              id: "custom-" + Date.now(),
-              level: "custom",
-              title,
-              description: desc || "Bài học tùy chỉnh tự biên soạn.",
-              sentences: list
-            };
-            STATE.customLessons.unshift(newLesson);
+            if (STATE.editingLessonId) {
+              const idx = STATE.customLessons.findIndex(l => l.id === STATE.editingLessonId);
+              if (idx !== -1) {
+                STATE.customLessons[idx].title = title;
+                STATE.customLessons[idx].description = desc || "Bài học tùy chỉnh tự biên soạn.";
+                STATE.customLessons[idx].sentences = list;
+              }
+              STATE.editingLessonId = null;
+            } else {
+              const newLesson = {
+                id: "custom-" + Date.now(),
+                level: "custom",
+                title,
+                description: desc || "Bài học tùy chỉnh tự biên soạn.",
+                sentences: list
+              };
+              STATE.customLessons.unshift(newLesson);
+            }
             saveState();
             navigate("dashboard");
           });
+      }
+
+      function handleEditCustomLesson(id) {
+        const lesson = STATE.customLessons.find(l => l.id === id);
+        if (!lesson) return;
+        STATE.editingLessonId = id;
+        navigate("creator");
+      }
+
+      function handleDeleteCustomLesson(id) {
+        if (confirm("Bạn có chắc chắn muốn xóa bài luyện tập tự soạn này không?")) {
+          STATE.customLessons = STATE.customLessons.filter(l => l.id !== id);
+          saveState();
+          render();
+        }
       }
 
       function handleSpeak(slow = false) {
@@ -828,7 +864,8 @@ Explain clearly what they wrote wrong and why it should be corrected. Keep it fr
           xpEarned: xpReward,
           coinsEarned: coinReward,
           wasPerfect: wasPerfect,
-          explanation: STATE.currentAiExplanation || ""
+          explanation: STATE.currentAiExplanation || "",
+          attemptsUsed: STATE.currentAttemptsUsed
         });
 
         // Reset current sentence states
@@ -1202,6 +1239,7 @@ Explain clearly what they wrote wrong and why it should be corrected. Keep it fr
         };
 
         const listLength = l.sentences.length;
+        const isCustom = l.level === "custom";
 
         return `
           <div class="bg-white dark:bg-slate-800 p-6 rounded-xl b-heavy border-slate-900 shadow-heavy flex flex-col justify-between hover:-translate-y-1 transition-all duration-200">
@@ -1214,13 +1252,32 @@ Explain clearly what they wrote wrong and why it should be corrected. Keep it fr
               <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-6">${l.description}</p>
             </div>
 
-            <button 
-              onclick="navigate('practice', { lesson: ${JSON.stringify(l).replace(/"/g, '&quot;')} })" 
-              class="w-full bg-slate-100 dark:bg-slate-700 hover:bg-blue-500 hover:text-white dark:hover:bg-blue-600 font-black py-2.5 px-4 rounded-lg b-heavy border-slate-900 dark:border-white text-xs tracking-wider transition-colors uppercase active-pop flex items-center justify-center gap-1"
-            >
-              Luyện Chính Tả
-              ${getIcon("chevronRight")}
-            </button>
+            <div class="space-y-2">
+              <button 
+                onclick="navigate('practice', { lesson: ${JSON.stringify(l).replace(/"/g, '&quot;')} })" 
+                class="w-full bg-blue-500 hover:bg-blue-600 text-white font-black py-2.5 px-4 rounded-lg b-heavy border-slate-900 shadow-sm active-pop text-xs tracking-wider transition-colors uppercase flex items-center justify-center gap-1"
+              >
+                Luyện Chính Tả
+                ${getIcon("chevronRight")}
+              </button>
+
+              ${isCustom ? `
+                <div class="grid grid-cols-2 gap-2">
+                  <button 
+                    onclick="handleEditCustomLesson('${l.id}')" 
+                    class="bg-amber-400 hover:bg-amber-500 text-slate-900 font-black py-2 px-3 rounded-lg b-heavy border-slate-900 text-[10px] tracking-wider transition-colors uppercase active-pop flex items-center justify-center gap-1"
+                  >
+                    Sửa Bài ✏️
+                  </button>
+                  <button 
+                    onclick="handleDeleteCustomLesson('${l.id}')" 
+                    class="bg-rose-100 hover:bg-rose-200 text-rose-700 dark:bg-rose-950 dark:text-rose-300 font-black py-2 px-3 rounded-lg b-heavy border-slate-900 text-[10px] tracking-wider transition-colors uppercase active-pop flex items-center justify-center gap-1"
+                  >
+                    Xóa Bài 🗑️
+                  </button>
+                </div>
+              ` : ""}
+            </div>
           </div>
         `;
       }
@@ -1280,10 +1337,17 @@ Explain clearly what they wrote wrong and why it should be corrected. Keep it fr
           <div class="max-w-3xl mx-auto py-4">
             <!-- Lesson title header -->
             <div class="flex items-center justify-between mb-6">
-              <button onclick="navigate('dashboard')" class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 p-2.5 rounded-xl b-heavy border-slate-900 text-xs font-bold active-pop">
-                ${getIcon("arrowLeft")}
-                Trở về
-              </button>
+              <div class="flex gap-2">
+                <button onclick="navigate('dashboard')" class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 p-2.5 rounded-xl b-heavy border-slate-900 text-xs font-bold active-pop">
+                  ${getIcon("arrowLeft")}
+                  Trở về
+                </button>
+                ${STATE.currentLesson.level === "custom" ? `
+                  <button onclick="handleEditCustomLesson('${STATE.currentLesson.id}')" class="flex items-center gap-1.5 bg-amber-400 hover:bg-amber-500 text-slate-900 p-2.5 rounded-xl b-heavy border-slate-900 text-xs font-black active-pop">
+                    ${getIcon("pencil")} Sửa Bài ✏️
+                  </button>
+                ` : ""}
+              </div>
 
               <div class="text-center font-bold font-mono text-sm bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 px-4 py-1.5 rounded-xl b-heavy border-slate-900 dark:border-slate-200">
                 CÂU HỎI: ${STATE.currentSentenceIndex + 1} / ${STATE.currentLesson.sentences.length}
@@ -1310,6 +1374,21 @@ Explain clearly what they wrote wrong and why it should be corrected. Keep it fr
                     ${getIcon("play")} Nghe chậm (0.7x)
                   </button>
                 </div>
+                
+                <!-- Quick Voice Selection Dropdown -->
+                <div class="mt-4 flex items-center gap-2 max-w-xs justify-center mx-auto bg-slate-50 dark:bg-slate-900 p-2 rounded-xl border-2 border-slate-900 dark:border-slate-700">
+                  <span class="text-[10px] text-slate-500 font-bold uppercase shrink-0 flex items-center gap-1">🗣️ Giọng đọc:</span>
+                  <select 
+                    onchange="STATE.settings.voiceURI = this.value; saveState(); render();" 
+                    class="bg-transparent text-xs font-black text-slate-800 dark:text-white outline-none cursor-pointer max-w-[150px] truncate"
+                  >
+                    ${getVoicesList().map(v => {
+                      const selectedAttr = STATE.settings.voiceURI === v.voiceURI ? "selected" : "";
+                      return `<option class="text-slate-800" value="${v.voiceURI}" ${selectedAttr}>${v.name} (${v.lang})</option>`;
+                    }).join("") || `<option value="">Hệ thống mặc định</option>`}
+                  </select>
+                </div>
+
                 <p class="text-xs text-slate-400 dark:text-slate-500 font-mono mt-3">Lượt nghe đã ghi nhận: ${STATE.listenCount} lần</p>
               </div>
 
@@ -1320,6 +1399,10 @@ Explain clearly what they wrote wrong and why it should be corrected. Keep it fr
                   <textarea 
                     id="typed-input" 
                     required 
+                    autofocus
+                    oninput="STATE.typedText = this.value"
+                    onpaste="event.preventDefault(); alert('Để học tập hiệu quả và nhớ từ lâu hơn, vui lòng tự gõ lại thay vì dán (paste) chữ bạn nhé! 💪');"
+                    onkeydown="if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'v') { event.preventDefault(); alert('Để học tập hiệu quả và nhớ từ lâu hơn, vui lòng tự gõ lại thay vì dán (paste) chữ bạn nhé! 💪'); }"
                     ${STATE.currentSentenceSubmitted ? "disabled" : ""}
                     placeholder="Hãy bắt đầu viết tại đây..." 
                     class="w-full bg-slate-50 dark:bg-slate-900 b-heavy p-4 rounded-xl text-lg font-bold focus:ring-4 focus:ring-blue-200 outline-none focus:bg-white text-center font-mono ${STATE.settings.fontSize === "small" ? "text-base" : STATE.settings.fontSize === "large" ? "text-2xl" : "text-xl"}"
@@ -1443,9 +1526,14 @@ Explain clearly what they wrote wrong and why it should be corrected. Keep it fr
       // ==========================================
       function renderResult() {
         const results = STATE.practiceStats.sentencesResults;
-        const totalAccuracy = Math.round(results.reduce((acc, curr) => acc + curr.accuracy, 0) / results.length);
+        const totalAccuracy = Math.round(results.reduce((acc, curr) => acc + curr.accuracy, 0) / (results.length || 1));
         const totalXp = results.reduce((acc, curr) => acc + curr.xpEarned, 0);
         const totalCoins = results.reduce((acc, curr) => acc + curr.coinsEarned, 0);
+
+        const firstTryCorrect = results.filter(r => r.wasPerfect && (r.attemptsUsed || 1) === 1).length;
+        const subsequentTryCorrect = results.filter(r => r.wasPerfect && (r.attemptsUsed || 1) > 1).length;
+        const totalSentences = results.length;
+        const wrongOrSkipped = totalSentences - (firstTryCorrect + subsequentTryCorrect);
 
         let resultsListHtml = results.map((r, index) => {
           // Generate detailed inline colored word diff markup
@@ -1464,7 +1552,18 @@ Explain clearly what they wrote wrong and why it should be corrected. Keep it fr
           return `
             <div class="p-6 bg-slate-50 dark:bg-slate-900 rounded-xl b-heavy border-slate-900 dark:border-slate-700 flex flex-col gap-4">
               <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2.5">
-                <span class="text-xs bg-slate-200 dark:bg-slate-800 px-2 py-1 rounded font-bold">CÂU ${index + 1}</span>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs bg-slate-200 dark:bg-slate-800 px-2 py-1 rounded font-bold">CÂU ${index + 1}</span>
+                  ${r.wasPerfect ? (
+                    (r.attemptsUsed || 1) === 1 ? `
+                      <span class="text-[10px] font-black uppercase text-emerald-600 bg-green-50 dark:bg-green-950/40 px-2 py-0.5 rounded border border-green-300 dark:border-green-800">Đúng lần đầu ⭐</span>
+                    ` : `
+                      <span class="text-[10px] font-black uppercase text-blue-600 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded border border-blue-300 dark:border-blue-800">Đúng sau ${r.attemptsUsed} lần 🔁</span>
+                    `
+                  ) : `
+                    <span class="text-[10px] font-black uppercase text-rose-600 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded border border-rose-300 dark:border-rose-800">Chưa đúng chính xác ❌</span>
+                  `}
+                </div>
                 <span class="text-sm font-black text-blue-500 font-mono">${r.accuracy}% chính xác</span>
               </div>
 
@@ -1531,6 +1630,44 @@ Explain clearly what they wrote wrong and why it should be corrected. Keep it fr
               </div>
             </div>
 
+            <!-- Detailed statistics block -->
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl b-heavy border-slate-900 shadow-heavy mb-8 text-left space-y-4">
+              <h4 class="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-200 dark:border-slate-700 pb-2">
+                📊 Thống kê hiệu suất lần viết:
+              </h4>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="p-4 bg-emerald-50 dark:bg-emerald-950/20 rounded-xl border-2 border-emerald-900 text-center">
+                  <span class="text-xs font-black text-emerald-700 dark:text-emerald-400 block uppercase leading-tight">
+                    Đúng lần đầu tiên
+                  </span>
+                  <span class="text-3xl font-black text-emerald-700 dark:text-emerald-400 block mt-1.5">
+                    ${firstTryCorrect} / ${totalSentences}
+                  </span>
+                  <span class="text-[10px] text-slate-500 dark:text-slate-400 font-bold block mt-1">Xuất sắc! Đạt ngay 100%</span>
+                </div>
+                
+                <div class="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-xl border-2 border-blue-900 text-center">
+                  <span class="text-xs font-black text-blue-700 dark:text-blue-400 block uppercase leading-tight">
+                    Đúng lần 2 trở đi
+                  </span>
+                  <span class="text-3xl font-black text-blue-700 dark:text-blue-400 block mt-1.5">
+                    ${subsequentTryCorrect} / ${totalSentences}
+                  </span>
+                  <span class="text-[10px] text-slate-500 dark:text-slate-400 font-bold block mt-1">Kiên trì! Đạt sau khi sửa lỗi</span>
+                </div>
+
+                <div class="p-4 bg-rose-50 dark:bg-rose-950/20 rounded-xl border-2 border-rose-900 text-center">
+                  <span class="text-xs font-black text-rose-700 dark:text-rose-400 block uppercase leading-tight">
+                    Chưa đúng / Bỏ qua
+                  </span>
+                  <span class="text-3xl font-black text-rose-700 dark:text-rose-400 block mt-1.5">
+                    ${wrongOrSkipped} / ${totalSentences}
+                  </span>
+                  <span class="text-[10px] text-slate-500 dark:text-slate-400 font-bold block mt-1">Cần nỗ lực luyện thêm</span>
+                </div>
+              </div>
+            </div>
+
             <!-- Detailed feedback review per sentence -->
             <div class="space-y-6 mb-8">
               <h3 class="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2">
@@ -1540,16 +1677,25 @@ Explain clearly what they wrote wrong and why it should be corrected. Keep it fr
             </div>
 
             <!-- Action footer buttons -->
-            <div class="flex gap-4">
-              <button onclick="navigate('dashboard')" class="w-1/2 bg-blue-500 hover:bg-blue-600 text-white font-black py-4 px-6 rounded-xl b-heavy border-slate-900 shadow-pop-blue active-pop text-sm uppercase tracking-wider flex items-center justify-center gap-1">
+            <div class="flex flex-col sm:flex-row gap-4">
+              <button onclick="navigate('dashboard')" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-black py-4 px-6 rounded-xl b-heavy border-slate-900 shadow-pop-blue active-pop text-sm uppercase tracking-wider flex items-center justify-center gap-1">
                 ${getIcon("arrowLeft")} Trở về trang chủ
               </button>
               
+              ${STATE.currentLesson.level === "custom" ? `
+                <button 
+                  onclick="handleEditCustomLesson('${STATE.currentLesson.id}')" 
+                  class="flex-1 bg-amber-400 hover:bg-amber-500 text-slate-900 font-black py-4 px-6 rounded-xl b-heavy border-slate-900 shadow-[0px_6px_0px_0px_#d97706] active-pop text-sm uppercase tracking-wider flex items-center justify-center gap-1.5"
+                >
+                  ${getIcon("pencil")} Sửa bài chính tả
+                </button>
+              ` : ""}
+
               <button 
                 onclick="navigate('practice', { lesson: ${JSON.stringify(STATE.currentLesson).replace(/"/g, '&quot;')} })" 
-                class="w-1/2 bg-emerald-500 hover:bg-emerald-600 text-white font-black py-4 px-6 rounded-xl b-heavy border-slate-900 shadow-pop-emerald active-pop text-sm uppercase tracking-wider flex items-center justify-center gap-1.5"
+                class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-black py-4 px-6 rounded-xl b-heavy border-slate-900 shadow-pop-emerald active-pop text-sm uppercase tracking-wider flex items-center justify-center gap-1.5"
               >
-                ${getIcon("refresh")} Luyện tập lại bài học này
+                ${getIcon("refresh")} Luyện tập lại bài này
               </button>
             </div>
           </div>
@@ -1712,13 +1858,30 @@ Explain clearly what they wrote wrong and why it should be corrected. Keep it fr
       // VIEW: LESSON CREATOR (GEMINI POWERED)
       // ==========================================
       function renderLessonCreator() {
+        let title = "";
+        let desc = "";
+        let text = "";
+        let buttonText = "Bóc Tách Câu & Lưu Trữ Bài Luyện";
+        let viewTitle = "Trình soạn thảo bài học thông minh";
+
+        if (STATE.editingLessonId) {
+          const lesson = STATE.customLessons.find(l => l.id === STATE.editingLessonId);
+          if (lesson) {
+            title = lesson.title;
+            desc = lesson.description;
+            text = lesson.sentences.join("\n");
+            buttonText = "Cập nhật & Lưu bài viết 💾";
+            viewTitle = "Sửa bài viết chính tả";
+          }
+        }
+
         return `
           <div class="max-w-2xl mx-auto py-4">
             <div class="flex items-center justify-between mb-6">
-              <button onclick="navigate('dashboard')" class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 p-2.5 rounded-xl b-heavy border-slate-900 text-xs font-bold active-pop">
+              <button onclick="STATE.editingLessonId = null; navigate('dashboard')" class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 p-2.5 rounded-xl b-heavy border-slate-900 text-xs font-bold active-pop">
                 ${getIcon("arrowLeft")} Trở về
               </button>
-              <h2 class="text-xl font-black uppercase text-slate-800 dark:text-white">Trình soạn thảo bài học thông minh</h2>
+              <h2 class="text-xl font-black uppercase text-slate-800 dark:text-white">${viewTitle}</h2>
             </div>
 
             <div class="bg-white dark:bg-slate-800 p-8 rounded-2xl b-heavy border-slate-900 shadow-heavy">
@@ -1737,6 +1900,7 @@ Explain clearly what they wrote wrong and why it should be corrected. Keep it fr
                     id="creator-title" 
                     required 
                     placeholder="Ví dụ: My Favorite Travel Story..." 
+                    value="${title.replace(/"/g, '&quot;')}"
                     class="w-full bg-slate-50 dark:bg-slate-900 b-heavy p-3 rounded-lg font-bold outline-none focus:bg-white"
                   />
                 </div>
@@ -1747,6 +1911,7 @@ Explain clearly what they wrote wrong and why it should be corrected. Keep it fr
                     type="text" 
                     id="creator-desc" 
                     placeholder="Ví dụ: Cùng tìm hiểu và viết chính tả về các trải nghiệm du lịch thú vị..." 
+                    value="${desc.replace(/"/g, '&quot;')}"
                     class="w-full bg-slate-50 dark:bg-slate-900 b-heavy p-3 rounded-lg font-bold outline-none focus:bg-white"
                   />
                 </div>
@@ -1759,14 +1924,14 @@ Explain clearly what they wrote wrong and why it should be corrected. Keep it fr
                     placeholder="Hãy dán hoặc gõ toàn bộ bài viết, đoạn văn tiếng Anh của bạn vào đây..." 
                     rows="6"
                     class="w-full bg-slate-50 dark:bg-slate-900 b-heavy p-4 rounded-xl font-bold font-mono outline-none focus:bg-white leading-relaxed"
-                  ></textarea>
+                  >${text}</textarea>
                 </div>
 
                 <button 
                   type="submit" 
                   class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-black py-4 px-6 rounded-xl b-heavy border-slate-900 shadow-pop-blue active-pop text-sm uppercase tracking-wider flex items-center justify-center gap-2"
                 >
-                  ${getIcon("sparkles")} Bóc Tách Câu & Lưu Trữ Bài Luyện
+                  ${getIcon("sparkles")} ${buttonText}
                 </button>
               </form>
             </div>
@@ -1890,6 +2055,28 @@ Explain clearly what they wrote wrong and why it should be corrected. Keep it fr
         const settingsForm = document.getElementById("settings-form");
         if (settingsForm) {
           settingsForm.addEventListener("submit", handleSaveSettings);
+        }
+
+        // Super-robust paste and drop blocker for dictation input
+        const typedInput = document.getElementById("typed-input");
+        if (typedInput) {
+          const handleBlockPaste = (e) => {
+            e.preventDefault();
+            alert("Để học tập hiệu quả và nhớ từ lâu hơn, vui lòng tự gõ lại thay vì dán (paste) chữ bạn nhé! 💪");
+            typedInput.value = STATE.typedText || "";
+          };
+          typedInput.addEventListener("paste", handleBlockPaste);
+          typedInput.addEventListener("drop", handleBlockPaste);
+          typedInput.addEventListener("beforeinput", (e) => {
+            if (e.inputType === "insertFromPaste" || e.inputType === "insertFromDrop") {
+              handleBlockPaste(e);
+            }
+          });
+          typedInput.addEventListener("keydown", (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "v") {
+              handleBlockPaste(e);
+            }
+          });
         }
       }
 
